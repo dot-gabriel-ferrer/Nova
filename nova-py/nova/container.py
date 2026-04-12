@@ -20,33 +20,16 @@ from zarr.codecs import ZstdCodec
 from nova.wcs import NovaWCS
 from nova.provenance import ProvenanceBundle
 from nova.integrity import compute_sha256
-
-
-# NOVA format version
-NOVA_VERSION = "0.3.0"
-
-# Default chunk shape for 2D images (512x512 float64 = 2 MB per chunk)
-DEFAULT_CHUNK_SHAPE_2D: tuple[int, int] = (512, 512)
-
-# Default compression settings
-# Level 1 gives the best speed/ratio tradeoff for typical astronomical data
-# while keeping writes nearly as fast as raw (uncompressed) I/O.
-DEFAULT_COMPRESSOR = "zstd"
-DEFAULT_COMPRESSION_LEVEL = 1
-
-# NOVA JSON-LD context URL
-NOVA_CONTEXT = "https://nova-astro.org/v0.1/context.jsonld"
-
-# Supported compression codecs
-SUPPORTED_CODECS = {"zstd", "none"}
-
-# All data types supported by NOVA (section 4.3 of the specification)
-SUPPORTED_DTYPES = {
-    "int8", "int16", "int32", "int64",
-    "uint8", "uint16", "uint32",
-    "float16", "float32", "float64",
-    "complex64", "complex128",
-}
+from nova.constants import (
+    NOVA_VERSION,
+    NOVA_CONTEXT,
+    DEFAULT_CHUNK_SHAPE_2D,
+    DEFAULT_COMPRESSION_CODEC as DEFAULT_COMPRESSOR,
+    DEFAULT_COMPRESSION_LEVEL,
+    SUPPORTED_CODECS,
+    SUPPORTED_DTYPES,
+    TABLE_CHUNK_SIZE,
+)
 
 
 class NovaTable:
@@ -431,9 +414,20 @@ class NovaDataset:
             Chunk shape. Auto-selected for best performance if not provided.
         compression_level : int
             ZSTD compression level (default: 1 for speed).
+
+        Raises
+        ------
+        RuntimeError
+            If the store is not open for writing.
+        TypeError
+            If *data* is not a numpy ndarray.
         """
         if self._root is None:
             raise RuntimeError("Store not initialized. Open in 'w' or 'a' mode.")
+        if not isinstance(data, np.ndarray):
+            raise TypeError(
+                f"data must be a numpy.ndarray, got {type(data).__name__}"
+            )
 
         if chunks is None:
             chunks = _optimal_chunks(data.shape)
@@ -465,9 +459,20 @@ class NovaDataset:
             Uncertainty data array (same shape as science data).
         chunks : tuple of int, optional
             Chunk shape.
+
+        Raises
+        ------
+        RuntimeError
+            If the store is not open for writing.
+        TypeError
+            If *data* is not a numpy ndarray.
         """
         if self._root is None:
             raise RuntimeError("Store not initialized. Open in 'w' or 'a' mode.")
+        if not isinstance(data, np.ndarray):
+            raise TypeError(
+                f"data must be a numpy.ndarray, got {type(data).__name__}"
+            )
 
         if chunks is None:
             chunks = _optimal_chunks(data.shape)
@@ -495,9 +500,20 @@ class NovaDataset:
             Mask data array (uint8 or uint16, same shape as science data).
         chunks : tuple of int, optional
             Chunk shape.
+
+        Raises
+        ------
+        RuntimeError
+            If the store is not open for writing.
+        TypeError
+            If *data* is not a numpy ndarray.
         """
         if self._root is None:
             raise RuntimeError("Store not initialized. Open in 'w' or 'a' mode.")
+        if not isinstance(data, np.ndarray):
+            raise TypeError(
+                f"data must be a numpy.ndarray, got {type(data).__name__}"
+            )
 
         if chunks is None:
             chunks = _optimal_chunks(data.shape)
@@ -670,7 +686,7 @@ class NovaDataset:
             for col_name, col_data in table.columns.items():
                 tbl_group.create_array(
                     col_name,
-                    chunks=(min(len(col_data), 65536),),
+                    chunks=(min(len(col_data), TABLE_CHUNK_SIZE),),
                     data=col_data,
                     write_data=True,
                     overwrite=True,

@@ -2,7 +2,7 @@
 
 A cloud-native scientific data format for professional astronomy, designed to succeed FITS.
 
-License: MIT | Spec: v0.3 (Draft) | Python 3.10+ | Tests: 270 passed
+License: MIT | Spec: v0.3 (Draft) | Python 3.10+ | Tests: 292 passed
 
 ---
 
@@ -118,7 +118,7 @@ Nova/
             migrate.py               # Batch FITS->NOVA migration
             streaming.py             # Append-mode streaming writes
             adapters.py              # Pipeline adapters (CCDData, etc.)
-        tests/                       # 270 tests
+        tests/                       # 292 tests
         tutorials/                   # Step-by-step tutorials
         examples/
     notebooks/                       # Jupyter notebooks (5 interactive)
@@ -397,14 +397,14 @@ See the full specification: [NOVA Format Specification v0.3 (Draft)](spec/nova-s
 | *Real image tests* | Complete | 17 | Full pipeline with realistic data |
 | *Phase 1 tests* | Complete (v0.2) | 37 | MEF, tables, dtypes, scaling |
 
-**Total: 270 tests passing**
+**Total: 292 tests passing**
 
 ## Strategic Roadmap
 
 1. [done] Solid specification (v0.3 draft)
 2. [done] Python reference implementation (nova-py -- all 7 design invariants)
 3. [done] Integrated math and visualization tools
-4. [done] Comprehensive test suite with real astronomical data (270 tests)
+4. [done] Comprehensive test suite with real astronomical data (292 tests)
 5. [done] Multi-extension FITS support, table data, all data types (v0.2)
 6. [done] Remote access (HTTP/S3), batch migration, streaming, pipeline adapters (v0.3)
 7. [next] Performance optimization and large-scale support (v0.5)

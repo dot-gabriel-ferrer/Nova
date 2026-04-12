@@ -27,9 +27,7 @@ import numpy as np
 import zarr
 from zarr.codecs import ZstdCodec
 
-
-DEFAULT_COMPRESSION_LEVEL = 1
-NOVA_CONTEXT = "https://nova-astro.org/v0.1/context.jsonld"
+from nova.constants import DEFAULT_COMPRESSION_LEVEL, NOVA_CONTEXT, NOVA_VERSION
 
 
 class StreamWriter:
@@ -170,7 +168,7 @@ class StreamWriter:
         meta: dict[str, Any] = {
             "@context": NOVA_CONTEXT,
             "@type": "nova:TimeSeries",
-            "nova:version": "0.3.0",
+            "nova:version": NOVA_VERSION,
             "nova:created": datetime.datetime.now(
                 datetime.timezone.utc
             ).isoformat(),

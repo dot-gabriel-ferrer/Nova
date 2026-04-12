@@ -4,7 +4,9 @@ Reference Python implementation for the NOVA astronomical data format.
 A cloud-native scientific data format designed to succeed FITS.
 """
 
-__version__ = "0.3.0"
+from nova.constants import NOVA_VERSION
+
+__version__ = NOVA_VERSION
 
 from nova.container import NovaDataset, NovaExtension, NovaTable, open_dataset, create_dataset
 from nova.wcs import NovaWCS
@@ -25,6 +27,7 @@ from nova.remote import open_remote, is_remote_url
 from nova.migrate import migrate_directory, MigrationReport
 from nova.streaming import StreamWriter, open_appendable, append_frame
 from nova.adapters import to_ccddata, from_ccddata, to_nddata, nova_to_hdulist
+from nova import constants as constants
 from nova import math as math
 from nova import visualization as viz
 
@@ -88,4 +91,6 @@ __all__ = [
     "math",
     # Visualization
     "viz",
+    # Constants
+    "constants",
 ]

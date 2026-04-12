@@ -34,6 +34,8 @@ from typing import Any
 
 import numpy as np
 
+from nova.constants import SUPPORTED_REMOTE_SCHEMES
+
 
 def open_remote(
     url: str,
@@ -91,6 +93,12 @@ class RemoteNovaDataset:
         mode: str = "r",
         storage_options: dict[str, Any] | None = None,
     ) -> None:
+        scheme = url.split("://", 1)[0].lower() if "://" in url else ""
+        if scheme not in SUPPORTED_REMOTE_SCHEMES:
+            raise ValueError(
+                f"Unsupported URL scheme '{scheme}://'.  "
+                f"Supported schemes: {sorted(SUPPORTED_REMOTE_SCHEMES)}"
+            )
         self.url = url.rstrip("/")
         self.mode = mode
         self.storage_options = storage_options or {}
@@ -234,6 +242,6 @@ def is_remote_url(path: str) -> bool:
     """
     lower = str(path).lower()
     return any(
-        lower.startswith(scheme)
-        for scheme in ("http://", "https://", "s3://", "gs://", "az://", "abfs://")
+        lower.startswith(f"{scheme}://")
+        for scheme in SUPPORTED_REMOTE_SCHEMES
     )

@@ -21,6 +21,8 @@ from __future__ import annotations
 from typing import Literal
 import numpy as np
 
+from nova.constants import MAD_TO_STD
+
 
 # --------------------------------------------------------------------------
 #  Statistics
@@ -128,7 +130,7 @@ def robust_statistics(data: np.ndarray) -> dict[str, float]:
 
     # Biweight estimators (Tukey, c=9 for location, c=9 for scale)
     c_loc = 9.0
-    mad_scale = mad * 1.4826  # scale MAD to approximate std
+    mad_scale = mad * MAD_TO_STD  # scale MAD to approximate std
     if mad_scale > 0:
         u = (arr - med) / (c_loc * mad_scale)
         mask = np.abs(u) < 1.0

@@ -35,9 +35,7 @@ from typing import Any
 
 import numpy as np
 
-
-# Default FITS extensions to recognise
-FITS_EXTENSIONS = {".fits", ".fit", ".fts", ".fits.gz", ".fit.gz", ".fts.gz"}
+from nova.constants import FITS_EXTENSIONS
 
 
 @dataclass
@@ -149,7 +147,7 @@ def _convert_one(
         if verify:
             result.verified = _verify_roundtrip(fits_path, nova_path)
 
-    except Exception as exc:
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
         result.error = str(exc)
 
     result.elapsed_seconds = time.perf_counter() - start

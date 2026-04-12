@@ -47,7 +47,8 @@ products. The goal is to provide a format that is:
 | Batch Migration | v0.3 | Directory conversion, parallel, verify, incremental |
 | Streaming | v0.3 | Append-mode writes, time-series ingest, buffered I/O |
 | Pipeline Adapters | v0.3 | CCDData, NDData, HDUList bidirectional adapters |
-| Test Suite | v0.3 | 270 tests across all modules and features |
+| Test Suite | v0.3 | 292 tests across all modules and features |
+| Constants | v0.3 | Centralised shared values (MAD_TO_STD, HASH_READ_SIZE, etc.) |
 | Tutorials | v0.3 | 7 scripts covering all features |
 | Notebooks | v0.1 | 5 interactive notebooks with visualization |
 
@@ -142,6 +143,50 @@ every scenario FITS handles.
 - [x] Metadata written automatically on close
 - [ ] WebSocket support for live data streaming (deferred)
 - [ ] Real-time telescope control system ingestion (deferred)
+
+---
+
+## Post-Development Audit (v0.3.1) -- COMPLETE
+
+**Goal:** Improve code quality, eliminate magic numbers, centralise shared
+constants, add input validation to all public API entry points, and harden
+error handling.
+
+### A.1 Constants Centralisation [done]
+
+- [x] Create nova/constants.py with all shared values
+- [x] Migrate NOVA_VERSION, NOVA_CONTEXT from container.py, wcs.py, provenance.py, streaming.py
+- [x] Replace magic number 1.4826 with MAD_TO_STD in ml.py and math.py
+- [x] Replace magic number 65536 with HASH_READ_SIZE in integrity.py
+- [x] Replace magic number 65536 with TABLE_CHUNK_SIZE in container.py
+- [x] Replace hardcoded 3600 with ARCSEC_PER_DEG in wcs.py
+- [x] Centralise FITS_EXTENSIONS in constants.py (used by migrate.py)
+- [x] Centralise SUPPORTED_REMOTE_SCHEMES in constants.py (used by remote.py)
+- [x] Make SUPPORTED_DTYPES, SUPPORTED_CODECS, FITS_EXTENSIONS frozensets (immutable)
+- [x] Consolidate hardcoded validation URLs with NOVA_CONTEXT in validation.py
+
+### A.2 Input Validation [done]
+
+- [x] container.set_science_data: reject non-ndarray inputs (TypeError)
+- [x] container.set_uncertainty: reject non-ndarray inputs (TypeError)
+- [x] container.set_mask: reject non-ndarray inputs (TypeError)
+- [x] remote.RemoteNovaDataset: validate URL scheme on construction
+- [x] streaming.StreamWriter: validate buffer_size >= 1
+- [x] streaming.StreamWriter: validate compression_level 0-22
+
+### A.3 Error Handling [done]
+
+- [x] Replace bare Exception catch in migrate._convert_single_file with specific types
+- [x] Keep narrow exception set in _verify_roundtrip (OSError, ValueError, TypeError, KeyError)
+
+### A.4 Audit Test Suite [done]
+
+- [x] 22 new tests in test_audit.py covering all audit improvements
+- [x] Tests verify constants are frozenset where expected
+- [x] Tests verify modules import from constants (no hardcoded duplicates)
+- [x] Tests verify TypeError raised for invalid input types
+- [x] Tests verify ValueError raised for invalid URL schemes
+- [x] Total test suite: 292 tests passing
 
 ---
 
