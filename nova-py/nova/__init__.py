@@ -4,9 +4,9 @@ Reference Python implementation for the NOVA astronomical data format.
 A cloud-native scientific data format designed to succeed FITS.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-from nova.container import NovaDataset, open_dataset, create_dataset
+from nova.container import NovaDataset, NovaExtension, NovaTable, open_dataset, create_dataset
 from nova.wcs import NovaWCS
 from nova.fits_converter import from_fits, to_fits
 from nova.provenance import ProvenanceBundle
@@ -31,6 +31,8 @@ validate = validate_store
 __all__ = [
     # Core
     "NovaDataset",
+    "NovaExtension",
+    "NovaTable",
     "open_dataset",
     "create_dataset",
     "open",

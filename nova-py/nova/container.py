@@ -1,7 +1,9 @@
 """NOVA container management using Zarr v3 as the base store.
 
 This module provides the core data model for creating, reading, and writing
-NOVA datasets backed by Zarr stores.
+NOVA datasets backed by Zarr stores.  Supports multi-extension datasets
+(multiple HDU groups), table data (structured arrays), and multiple
+compression codecs.
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ from nova.integrity import compute_sha256
 
 
 # NOVA format version
-NOVA_VERSION = "0.1.0"
+NOVA_VERSION = "0.2.0"
 
 # Default chunk shape for 2D images (512x512 float64 = 2 MB per chunk)
 DEFAULT_CHUNK_SHAPE_2D: tuple[int, int] = (512, 512)
@@ -35,9 +37,162 @@ DEFAULT_COMPRESSION_LEVEL = 1
 # NOVA JSON-LD context URL
 NOVA_CONTEXT = "https://nova-astro.org/v0.1/context.jsonld"
 
+# Supported compression codecs
+SUPPORTED_CODECS = {"zstd", "none"}
+
+# All data types supported by NOVA (§4.3 of the specification)
+SUPPORTED_DTYPES = {
+    "int8", "int16", "int32", "int64",
+    "uint8", "uint16", "uint32",
+    "float16", "float32", "float64",
+    "complex64", "complex128",
+}
+
+
+class NovaTable:
+    """A table stored inside a NOVA dataset.
+
+    Tables are represented as a collection of Zarr arrays (one per column)
+    inside a Zarr group, together with column metadata stored as JSON.
+
+    Parameters
+    ----------
+    name : str
+        Table name / group path inside the store.
+    columns : dict[str, np.ndarray]
+        Column name → 1-D array mapping.
+    column_meta : dict[str, dict] | None
+        Per-column metadata (units, UCDs, descriptions).
+    """
+
+    def __init__(
+        self,
+        name: str,
+        columns: dict[str, np.ndarray] | None = None,
+        column_meta: dict[str, dict[str, Any]] | None = None,
+    ) -> None:
+        self.name = name
+        self.columns: dict[str, np.ndarray] = columns or {}
+        self.column_meta: dict[str, dict[str, Any]] = column_meta or {}
+        self._nrows: int | None = None
+        if self.columns:
+            first = next(iter(self.columns.values()))
+            self._nrows = len(first)
+
+    @property
+    def nrows(self) -> int:
+        if self._nrows is None:
+            return 0
+        return self._nrows
+
+    @property
+    def colnames(self) -> list[str]:
+        return list(self.columns.keys())
+
+    def add_column(
+        self,
+        name: str,
+        data: np.ndarray,
+        unit: str | None = None,
+        ucd: str | None = None,
+        description: str | None = None,
+    ) -> None:
+        """Add a column to the table."""
+        if self._nrows is not None and len(data) != self._nrows:
+            raise ValueError(
+                f"Column '{name}' has {len(data)} rows, expected {self._nrows}."
+            )
+        self.columns[name] = data
+        if self._nrows is None:
+            self._nrows = len(data)
+        meta: dict[str, Any] = {}
+        if unit is not None:
+            meta["nova:unit"] = unit
+        if ucd is not None:
+            meta["nova:ucd"] = ucd
+        if description is not None:
+            meta["nova:description"] = description
+        if meta:
+            self.column_meta[name] = meta
+
+    def to_structured_array(self) -> np.ndarray:
+        """Convert to a NumPy structured array."""
+        dtype_list = [(name, col.dtype) for name, col in self.columns.items()]
+        result = np.empty(self.nrows, dtype=dtype_list)
+        for name, col in self.columns.items():
+            result[name] = col
+        return result
+
+    @classmethod
+    def from_structured_array(
+        cls,
+        name: str,
+        arr: np.ndarray,
+        column_meta: dict[str, dict[str, Any]] | None = None,
+    ) -> NovaTable:
+        """Create a NovaTable from a NumPy structured array."""
+        columns = {field: arr[field] for field in arr.dtype.names}
+        return cls(name=name, columns=columns, column_meta=column_meta)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialise table metadata to a JSON-serialisable dictionary."""
+        col_descriptors = []
+        for name, data in self.columns.items():
+            desc: dict[str, Any] = {
+                "nova:name": name,
+                "nova:dtype": str(data.dtype),
+                "nova:length": len(data),
+            }
+            if name in self.column_meta:
+                desc.update(self.column_meta[name])
+            col_descriptors.append(desc)
+        return {
+            "@type": "nova:Table",
+            "nova:name": self.name,
+            "nova:nrows": self.nrows,
+            "nova:columns": col_descriptors,
+        }
+
+
+class NovaExtension:
+    """Represents one extension (HDU equivalent) inside a multi-extension
+    NOVA dataset.
+
+    Parameters
+    ----------
+    name : str
+        Extension name (e.g. ``'SCI'``, ``'ERR'``, ``'DQ'``).
+    data : np.ndarray | None
+        Image data for this extension.
+    header : dict | None
+        Header keyword dict for this extension.
+    wcs : NovaWCS | None
+        Extension-specific WCS.
+    extver : int
+        Extension version number (like FITS EXTVER).
+    """
+
+    def __init__(
+        self,
+        name: str,
+        data: np.ndarray | None = None,
+        header: dict[str, Any] | None = None,
+        wcs: NovaWCS | None = None,
+        extver: int = 1,
+    ) -> None:
+        self.name = name
+        self.data = data
+        self.header = header or {}
+        self.wcs = wcs
+        self.extver = extver
+
 
 class NovaDataset:
     """A NOVA dataset backed by a Zarr store.
+
+    Supports single-extension (classic) and multi-extension datasets (MEF
+    equivalent).  Each extension is a Zarr group with its own data array,
+    optional WCS, and header keywords.
 
     Parameters
     ----------
@@ -51,11 +206,15 @@ class NovaDataset:
     store_path : Path
         Path to the Zarr store.
     wcs : NovaWCS or None
-        World Coordinate System metadata.
+        World Coordinate System metadata (primary extension).
     provenance : ProvenanceBundle or None
         W3C PROV-DM provenance metadata.
     metadata : dict
         Root metadata dictionary.
+    extensions : list[NovaExtension]
+        Multi-extension data (populated when reading MEF datasets).
+    tables : dict[str, NovaTable]
+        Named tables stored in the dataset.
     """
 
     def __init__(self, store_path: str | Path, mode: str = "r") -> None:
@@ -65,6 +224,8 @@ class NovaDataset:
         self._metadata: dict[str, Any] = {}
         self._wcs: NovaWCS | None = None
         self._provenance: ProvenanceBundle | None = None
+        self._extensions: list[NovaExtension] = []
+        self._tables: dict[str, NovaTable] = {}
 
         if mode == "r" and self.store_path.exists():
             self._open_existing()
@@ -94,6 +255,62 @@ class NovaDataset:
             with open(prov_path) as f:
                 prov_data = json.load(f)
             self._provenance = ProvenanceBundle.from_dict(prov_data)
+
+        # Load multi-extension data
+        extensions_path = self.store_path / "extensions.json"
+        if extensions_path.exists():
+            with open(extensions_path) as f:
+                ext_meta = json.load(f)
+            for ext_info in ext_meta.get("nova:extensions", []):
+                ext_name = ext_info.get("nova:name", "UNKNOWN")
+                ext_ver = ext_info.get("nova:extver", 1)
+                ext_header = ext_info.get("nova:header", {})
+                ext_wcs = None
+                ext_wcs_path = self.store_path / "extensions" / ext_name / "wcs.json"
+                if ext_wcs_path.exists():
+                    with open(ext_wcs_path) as f:
+                        ext_wcs = NovaWCS.from_dict(json.load(f))
+                ext_data = None
+                try:
+                    ext_data_arr = self._root["extensions"][ext_name]["data"]
+                    ext_data = np.array(ext_data_arr)
+                except (KeyError, TypeError):
+                    pass
+                self._extensions.append(
+                    NovaExtension(
+                        name=ext_name,
+                        data=ext_data,
+                        header=ext_header,
+                        wcs=ext_wcs,
+                        extver=ext_ver,
+                    )
+                )
+
+        # Load tables
+        tables_path = self.store_path / "tables.json"
+        if tables_path.exists():
+            with open(tables_path) as f:
+                tables_meta = json.load(f)
+            for tbl_info in tables_meta.get("nova:tables", []):
+                tbl_name = tbl_info.get("nova:name", "unknown")
+                columns: dict[str, np.ndarray] = {}
+                col_meta: dict[str, dict[str, Any]] = {}
+                for col_desc in tbl_info.get("nova:columns", []):
+                    col_name = col_desc["nova:name"]
+                    try:
+                        col_arr = self._root["tables"][tbl_name][col_name]
+                        columns[col_name] = np.array(col_arr)
+                    except (KeyError, TypeError):
+                        pass
+                    meta_keys = {}
+                    for k in ("nova:unit", "nova:ucd", "nova:description"):
+                        if k in col_desc:
+                            meta_keys[k] = col_desc[k]
+                    if meta_keys:
+                        col_meta[col_name] = meta_keys
+                self._tables[tbl_name] = NovaTable(
+                    name=tbl_name, columns=columns, column_meta=col_meta,
+                )
 
     def _ensure_store(self) -> None:
         """Create or open a Zarr store for writing."""
@@ -153,6 +370,41 @@ class NovaDataset:
             return self._root["data"]["mask"]
         except KeyError:
             return None
+
+    # ── Multi-extension support ──────────────────────────────────────
+
+    @property
+    def extensions(self) -> list[NovaExtension]:
+        """List of extensions in a multi-extension dataset."""
+        return self._extensions
+
+    def add_extension(self, ext: NovaExtension) -> None:
+        """Add an extension to the dataset."""
+        self._extensions.append(ext)
+
+    def get_extension(
+        self, name: str, extver: int = 1,
+    ) -> NovaExtension | None:
+        """Retrieve an extension by name and version."""
+        for ext in self._extensions:
+            if ext.name == name and ext.extver == extver:
+                return ext
+        return None
+
+    # ── Table support ────────────────────────────────────────────────
+
+    @property
+    def tables(self) -> dict[str, NovaTable]:
+        """Named tables in the dataset."""
+        return self._tables
+
+    def add_table(self, table: NovaTable) -> None:
+        """Add a table to the dataset."""
+        self._tables[table.name] = table
+
+    def get_table(self, name: str) -> NovaTable | None:
+        """Retrieve a table by name."""
+        return self._tables.get(name)
 
     def set_science_data(
         self,
@@ -303,9 +555,10 @@ class NovaDataset:
     def save(self, build_index: bool = False) -> None:
         """Write all metadata files to the store.
 
-        Writes nova_metadata.json, wcs.json, and provenance.json to the store
-        root.  Optionally builds the chunk integrity index (nova_index.json)
-        which requires reading back every chunk and computing SHA-256 hashes.
+        Writes nova_metadata.json, wcs.json, provenance.json, extensions, and
+        tables to the store root.  Optionally builds the chunk integrity index
+        (nova_index.json) which requires reading back every chunk and computing
+        SHA-256 hashes.
 
         Parameters
         ----------
@@ -336,12 +589,92 @@ class NovaDataset:
             with open(prov_path, "w") as f:
                 json.dump(self._provenance.to_dict(), f, indent=2)
 
+        # Write extensions (multi-extension support)
+        if self._extensions:
+            self._save_extensions()
+
+        # Write tables
+        if self._tables:
+            self._save_tables()
+
         # Write chunk index (expensive — reads all chunks + SHA-256)
         if build_index:
             index = self._build_chunk_index()
             index_path = self.store_path / "nova_index.json"
             with open(index_path, "w") as f:
                 json.dump(index, f, indent=2)
+
+    def _save_extensions(self) -> None:
+        """Persist multi-extension data and metadata."""
+        if self._root is None:
+            raise RuntimeError("Store not initialized.")
+
+        ext_meta_list: list[dict[str, Any]] = []
+        ext_group = self._root.require_group("extensions")
+
+        for ext in self._extensions:
+            sub = ext_group.require_group(ext.name)
+            if ext.data is not None:
+                chunks = _optimal_chunks(ext.data.shape)
+                sub.create_array(
+                    "data",
+                    chunks=chunks,
+                    compressors=[ZstdCodec(level=DEFAULT_COMPRESSION_LEVEL)],
+                    data=ext.data,
+                    write_data=True,
+                    overwrite=True,
+                )
+            # Extension-specific WCS
+            if ext.wcs is not None:
+                ext_dir = self.store_path / "extensions" / ext.name
+                ext_dir.mkdir(parents=True, exist_ok=True)
+                with open(ext_dir / "wcs.json", "w") as f:
+                    json.dump(ext.wcs.to_dict(), f, indent=2)
+
+            ext_meta_list.append({
+                "nova:name": ext.name,
+                "nova:extver": ext.extver,
+                "nova:header": ext.header,
+                "nova:has_data": ext.data is not None,
+                "nova:shape": list(ext.data.shape) if ext.data is not None else None,
+                "nova:dtype": str(ext.data.dtype) if ext.data is not None else None,
+            })
+
+        ext_doc = {
+            "@context": NOVA_CONTEXT,
+            "@type": "nova:MultiExtensionDataset",
+            "nova:extensions": ext_meta_list,
+        }
+        with open(self.store_path / "extensions.json", "w") as f:
+            json.dump(ext_doc, f, indent=2)
+
+    def _save_tables(self) -> None:
+        """Persist table data and metadata."""
+        if self._root is None:
+            raise RuntimeError("Store not initialized.")
+
+        tables_group = self._root.require_group("tables")
+        tbl_meta_list: list[dict[str, Any]] = []
+
+        for tbl_name, table in self._tables.items():
+            tbl_group = tables_group.require_group(tbl_name)
+            for col_name, col_data in table.columns.items():
+                tbl_group.create_array(
+                    col_name,
+                    chunks=(min(len(col_data), 65536),),
+                    data=col_data,
+                    write_data=True,
+                    overwrite=True,
+                )
+            tbl_meta_list.append(table.to_dict())
+
+        tables_doc = {
+            "@context": NOVA_CONTEXT,
+            "@type": "nova:TableCollection",
+            "nova:tables": tbl_meta_list,
+        }
+        with open(self.store_path / "tables.json", "w") as f:
+            json.dump(tables_doc, f, indent=2)
 
     def close(self) -> None:
         """Close the dataset."""
