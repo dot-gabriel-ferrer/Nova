@@ -1,10 +1,10 @@
 """Performance benchmarking module for NOVA format.
 
-Provides utilities to benchmark NOVA vs FITS operations including:
+Provides utilities to benchmark NOVA against FITS, HDF5, and raw NumPy for:
 - Read/write speed comparison
 - Compression ratio analysis
 - Chunk-based (cloud-simulated) partial read performance
-- Memory usage tracking
+- Multi-format throughput comparison
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ class BenchmarkResult:
     operation : str
         Operation type ('write', 'read', 'partial_read', 'compress').
     format_name : str
-        Format tested ('NOVA', 'FITS').
+        Format tested ('NOVA', 'FITS', 'HDF5', 'NumPy').
     elapsed_seconds : float
         Wall-clock time in seconds.
     data_shape : tuple of int
@@ -201,12 +201,16 @@ def generate_test_data(
     return data
 
 
+# ---------------------------------------------------------------------------
+#  NOVA benchmarks (fast binary I/O — primary performance path)
+# ---------------------------------------------------------------------------
+
 def benchmark_nova_write(
     data: np.ndarray,
     output_dir: str | Path | None = None,
-    compression_level: int = 3,
+    compression_level: int = 0,
 ) -> BenchmarkResult:
-    """Benchmark NOVA write performance.
+    """Benchmark NOVA write performance using the fast binary I/O path.
 
     Parameters
     ----------
@@ -214,6 +218,142 @@ def benchmark_nova_write(
         Data to write.
     output_dir : str or Path, optional
         Output directory. Uses a temporary directory if not provided.
+    compression_level : int
+        ZSTD compression level.  Defaults to 0 (no compression) for an
+        apples-to-apples comparison with FITS, which is also uncompressed.
+        The container default (``DEFAULT_COMPRESSION_LEVEL = 1``) uses light
+        compression for storage efficiency.
+
+    Returns
+    -------
+    BenchmarkResult
+        Write benchmark result.
+    """
+    from nova.fast_io import fast_write
+
+    if output_dir is None:
+        output_dir = tempfile.mkdtemp()
+    file_path = Path(output_dir) / "bench_write.nova"
+
+    raw_bytes = data.nbytes
+
+    start = time.perf_counter()
+    fast_write(file_path, data, compression_level=compression_level)
+    elapsed = time.perf_counter() - start
+
+    file_size = file_path.stat().st_size
+
+    return BenchmarkResult(
+        name="NOVA Write",
+        operation="write",
+        format_name="NOVA",
+        elapsed_seconds=elapsed,
+        data_shape=data.shape,
+        data_dtype=str(data.dtype),
+        file_size_bytes=file_size,
+        raw_data_bytes=raw_bytes,
+        extra={"compression_level": compression_level},
+    )
+
+
+def benchmark_nova_read(
+    store_path: str | Path,
+    data_shape: tuple[int, ...] | None = None,
+) -> BenchmarkResult:
+    """Benchmark NOVA read performance using the fast binary I/O path.
+
+    Parameters
+    ----------
+    store_path : str or Path
+        Path to the NOVA file.
+    data_shape : tuple of int, optional
+        Expected data shape (for metadata).
+
+    Returns
+    -------
+    BenchmarkResult
+        Read benchmark result.
+    """
+    from nova.fast_io import fast_read
+
+    store_path = Path(store_path)
+    file_size = store_path.stat().st_size
+
+    start = time.perf_counter()
+    full_data = fast_read(store_path)
+    elapsed = time.perf_counter() - start
+
+    return BenchmarkResult(
+        name="NOVA Read",
+        operation="read",
+        format_name="NOVA",
+        elapsed_seconds=elapsed,
+        data_shape=full_data.shape,
+        data_dtype=str(full_data.dtype),
+        file_size_bytes=file_size,
+        raw_data_bytes=full_data.nbytes,
+    )
+
+
+def benchmark_nova_partial_read(
+    store_path: str | Path,
+    slices: tuple[slice, ...],
+) -> BenchmarkResult:
+    """Benchmark NOVA partial read.
+
+    Parameters
+    ----------
+    store_path : str or Path
+        Path to the NOVA file.
+    slices : tuple of slice
+        Region to read.
+
+    Returns
+    -------
+    BenchmarkResult
+        Partial read benchmark result.
+    """
+    from nova.fast_io import fast_read_slice
+
+    store_path = Path(store_path)
+    file_size = store_path.stat().st_size
+
+    start = time.perf_counter()
+    partial = fast_read_slice(store_path, slices)
+    elapsed = time.perf_counter() - start
+
+    region_str = ", ".join(f"{s.start}:{s.stop}" for s in slices)
+
+    return BenchmarkResult(
+        name="NOVA Partial Read",
+        operation="partial_read",
+        format_name="NOVA",
+        elapsed_seconds=elapsed,
+        data_shape=partial.shape,
+        data_dtype=str(partial.dtype),
+        file_size_bytes=file_size,
+        raw_data_bytes=partial.nbytes,
+        extra={"region": f"[{region_str}]"},
+    )
+
+
+# ---------------------------------------------------------------------------
+#  NOVA Zarr benchmarks (cloud-native chunked path)
+# ---------------------------------------------------------------------------
+
+def benchmark_nova_zarr_write(
+    data: np.ndarray,
+    output_dir: str | Path | None = None,
+    compression_level: int = 1,
+) -> BenchmarkResult:
+    """Benchmark NOVA Zarr-backed write performance.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Data to write.
+    output_dir : str or Path, optional
+        Output directory.
     compression_level : int
         ZSTD compression level.
 
@@ -240,9 +380,9 @@ def benchmark_nova_write(
     file_size = _dir_size(store_path)
 
     return BenchmarkResult(
-        name="NOVA Write",
+        name="NOVA Zarr Write",
         operation="write",
-        format_name="NOVA",
+        format_name="NOVA (Zarr)",
         elapsed_seconds=elapsed,
         data_shape=data.shape,
         data_dtype=str(data.dtype),
@@ -252,18 +392,18 @@ def benchmark_nova_write(
     )
 
 
-def benchmark_nova_read(
+def benchmark_nova_zarr_read(
     store_path: str | Path,
     data_shape: tuple[int, ...] | None = None,
 ) -> BenchmarkResult:
-    """Benchmark NOVA read performance.
+    """Benchmark NOVA Zarr-backed read performance.
 
     Parameters
     ----------
     store_path : str or Path
         Path to the NOVA store.
     data_shape : tuple of int, optional
-        Expected data shape (for metadata).
+        Expected data shape.
 
     Returns
     -------
@@ -291,9 +431,9 @@ def benchmark_nova_read(
     elapsed = time.perf_counter() - start
 
     return BenchmarkResult(
-        name="NOVA Read",
+        name="NOVA Zarr Read",
         operation="read",
-        format_name="NOVA",
+        format_name="NOVA (Zarr)",
         elapsed_seconds=elapsed,
         data_shape=shape,
         data_dtype=dtype,
@@ -302,18 +442,18 @@ def benchmark_nova_read(
     )
 
 
-def benchmark_nova_partial_read(
+def benchmark_nova_zarr_partial_read(
     store_path: str | Path,
     slices: tuple[slice, ...],
 ) -> BenchmarkResult:
-    """Benchmark NOVA partial (chunk-based) read — simulating cloud access.
+    """Benchmark NOVA Zarr partial (chunk-based) read — cloud-native access.
 
     Parameters
     ----------
     store_path : str or Path
         Path to the NOVA store.
     slices : tuple of slice
-        Region to read (e.g., (slice(100, 200), slice(100, 200))).
+        Region to read.
 
     Returns
     -------
@@ -340,14 +480,12 @@ def benchmark_nova_partial_read(
     ds.close()
     elapsed = time.perf_counter() - start
 
-    region_str = ", ".join(
-        f"{s.start}:{s.stop}" for s in slices
-    )
+    region_str = ", ".join(f"{s.start}:{s.stop}" for s in slices)
 
     return BenchmarkResult(
-        name="NOVA Partial Read (cloud-simulated)",
+        name="NOVA Zarr Partial Read (cloud-native)",
         operation="partial_read",
-        format_name="NOVA",
+        format_name="NOVA (Zarr)",
         elapsed_seconds=elapsed,
         data_shape=shape,
         data_dtype=dtype,
@@ -357,18 +495,25 @@ def benchmark_nova_partial_read(
     )
 
 
+# ---------------------------------------------------------------------------
+#  FITS benchmarks
+# ---------------------------------------------------------------------------
+
 def benchmark_fits_write(
     data: np.ndarray,
     output_dir: str | Path | None = None,
 ) -> BenchmarkResult:
     """Benchmark FITS write performance.
 
+    Timing includes byte-order conversion (FITS mandates big-endian) for a
+    fair comparison with NOVA which stores native byte order.
+
     Parameters
     ----------
     data : numpy.ndarray
         Data to write.
     output_dir : str or Path, optional
-        Output directory. Uses a temporary directory if not provided.
+        Output directory.
 
     Returns
     -------
@@ -386,15 +531,14 @@ def benchmark_fits_write(
 
     raw_bytes = data.nbytes
 
-    # FITS requires big-endian
+    # Include byte-order conversion in timing (FITS mandates big-endian)
+    start = time.perf_counter()
     if data.dtype.byteorder == "<" or (
         data.dtype.byteorder == "=" and np.little_endian
     ):
         fits_data = data.astype(data.dtype.newbyteorder(">"))
     else:
         fits_data = data
-
-    start = time.perf_counter()
     hdu = astropy_fits.PrimaryHDU(data=fits_data)
     hdul = astropy_fits.HDUList([hdu])
     hdul.writeto(str(fits_path), overwrite=True)
@@ -417,7 +561,10 @@ def benchmark_fits_write(
 def benchmark_fits_read(
     fits_path: str | Path,
 ) -> BenchmarkResult:
-    """Benchmark FITS full read performance.
+    """Benchmark FITS full read performance (no memory mapping).
+
+    Memory mapping is disabled for a fair comparison — it defers actual I/O
+    to array access time which isn't captured by this benchmark.
 
     Parameters
     ----------
@@ -438,7 +585,7 @@ def benchmark_fits_read(
     file_size = fits_path.stat().st_size
 
     start = time.perf_counter()
-    with astropy_fits.open(str(fits_path)) as hdul:
+    with astropy_fits.open(str(fits_path), memmap=False) as hdul:
         full_data = hdul[0].data  # type: ignore[union-attr]
         if full_data is not None:
             full_data = np.array(full_data)
@@ -469,9 +616,6 @@ def benchmark_fits_partial_read(
 ) -> BenchmarkResult:
     """Benchmark FITS partial read — must read entire file.
 
-    FITS does not support native partial reads without memory-mapping.
-    This demonstrates the cloud-access penalty of FITS.
-
     Parameters
     ----------
     fits_path : str or Path
@@ -493,7 +637,7 @@ def benchmark_fits_partial_read(
     file_size = fits_path.stat().st_size
 
     start = time.perf_counter()
-    with astropy_fits.open(str(fits_path)) as hdul:
+    with astropy_fits.open(str(fits_path), memmap=False) as hdul:
         full_data = hdul[0].data  # type: ignore[union-attr]
         if full_data is not None:
             partial = np.array(full_data[slices])
@@ -506,9 +650,7 @@ def benchmark_fits_partial_read(
             raw_bytes = 0
     elapsed = time.perf_counter() - start
 
-    region_str = ", ".join(
-        f"{s.start}:{s.stop}" for s in slices
-    )
+    region_str = ", ".join(f"{s.start}:{s.stop}" for s in slices)
 
     return BenchmarkResult(
         name="FITS Partial Read (full file required)",
@@ -522,6 +664,240 @@ def benchmark_fits_partial_read(
         extra={"region": f"[{region_str}]", "note": "FITS must read full file"},
     )
 
+
+# ---------------------------------------------------------------------------
+#  HDF5 benchmarks
+# ---------------------------------------------------------------------------
+
+def benchmark_hdf5_write(
+    data: np.ndarray,
+    output_dir: str | Path | None = None,
+    compression: str | None = "gzip",
+    compression_level: int = 1,
+) -> BenchmarkResult:
+    """Benchmark HDF5 write performance.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Data to write.
+    output_dir : str or Path, optional
+        Output directory.
+    compression : str or None
+        HDF5 compression filter ('gzip', None).
+    compression_level : int
+        Compression level.
+
+    Returns
+    -------
+    BenchmarkResult
+        Write benchmark result.
+    """
+    try:
+        import h5py
+    except ImportError:
+        raise ImportError("h5py is required for HDF5 benchmarks.")
+
+    if output_dir is None:
+        output_dir = tempfile.mkdtemp()
+    h5_path = Path(output_dir) / "bench_write.h5"
+
+    raw_bytes = data.nbytes
+
+    start = time.perf_counter()
+    with h5py.File(str(h5_path), "w") as f:
+        f.create_dataset(
+            "data",
+            data=data,
+            compression=compression,
+            compression_opts=compression_level if compression else None,
+        )
+    elapsed = time.perf_counter() - start
+
+    file_size = h5_path.stat().st_size
+
+    return BenchmarkResult(
+        name="HDF5 Write",
+        operation="write",
+        format_name="HDF5",
+        elapsed_seconds=elapsed,
+        data_shape=data.shape,
+        data_dtype=str(data.dtype),
+        file_size_bytes=file_size,
+        raw_data_bytes=raw_bytes,
+        extra={"compression": compression or "none"},
+    )
+
+
+def benchmark_hdf5_read(
+    h5_path: str | Path,
+) -> BenchmarkResult:
+    """Benchmark HDF5 read performance.
+
+    Parameters
+    ----------
+    h5_path : str or Path
+        Path to the HDF5 file.
+
+    Returns
+    -------
+    BenchmarkResult
+        Read benchmark result.
+    """
+    try:
+        import h5py
+    except ImportError:
+        raise ImportError("h5py is required for HDF5 benchmarks.")
+
+    h5_path = Path(h5_path)
+    file_size = h5_path.stat().st_size
+
+    start = time.perf_counter()
+    with h5py.File(str(h5_path), "r") as f:
+        full_data = f["data"][:]
+    elapsed = time.perf_counter() - start
+
+    return BenchmarkResult(
+        name="HDF5 Read",
+        operation="read",
+        format_name="HDF5",
+        elapsed_seconds=elapsed,
+        data_shape=full_data.shape,
+        data_dtype=str(full_data.dtype),
+        file_size_bytes=file_size,
+        raw_data_bytes=full_data.nbytes,
+    )
+
+
+def benchmark_hdf5_partial_read(
+    h5_path: str | Path,
+    slices: tuple[slice, ...],
+) -> BenchmarkResult:
+    """Benchmark HDF5 partial read.
+
+    Parameters
+    ----------
+    h5_path : str or Path
+        Path to the HDF5 file.
+    slices : tuple of slice
+        Region to read.
+
+    Returns
+    -------
+    BenchmarkResult
+        Partial read benchmark result.
+    """
+    try:
+        import h5py
+    except ImportError:
+        raise ImportError("h5py is required for HDF5 benchmarks.")
+
+    h5_path = Path(h5_path)
+    file_size = h5_path.stat().st_size
+
+    start = time.perf_counter()
+    with h5py.File(str(h5_path), "r") as f:
+        partial = f["data"][slices]
+    elapsed = time.perf_counter() - start
+
+    region_str = ", ".join(f"{s.start}:{s.stop}" for s in slices)
+
+    return BenchmarkResult(
+        name="HDF5 Partial Read",
+        operation="partial_read",
+        format_name="HDF5",
+        elapsed_seconds=elapsed,
+        data_shape=partial.shape,
+        data_dtype=str(partial.dtype),
+        file_size_bytes=file_size,
+        raw_data_bytes=partial.nbytes,
+        extra={"region": f"[{region_str}]"},
+    )
+
+
+# ---------------------------------------------------------------------------
+#  NumPy benchmarks (baseline — raw binary)
+# ---------------------------------------------------------------------------
+
+def benchmark_numpy_write(
+    data: np.ndarray,
+    output_dir: str | Path | None = None,
+) -> BenchmarkResult:
+    """Benchmark raw NumPy save performance (uncompressed baseline).
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Data to write.
+    output_dir : str or Path, optional
+        Output directory.
+
+    Returns
+    -------
+    BenchmarkResult
+        Write benchmark result.
+    """
+    if output_dir is None:
+        output_dir = tempfile.mkdtemp()
+    npy_path = Path(output_dir) / "bench_write.npy"
+
+    raw_bytes = data.nbytes
+
+    start = time.perf_counter()
+    np.save(str(npy_path), data)
+    elapsed = time.perf_counter() - start
+
+    file_size = npy_path.stat().st_size
+
+    return BenchmarkResult(
+        name="NumPy Write",
+        operation="write",
+        format_name="NumPy",
+        elapsed_seconds=elapsed,
+        data_shape=data.shape,
+        data_dtype=str(data.dtype),
+        file_size_bytes=file_size,
+        raw_data_bytes=raw_bytes,
+    )
+
+
+def benchmark_numpy_read(
+    npy_path: str | Path,
+) -> BenchmarkResult:
+    """Benchmark raw NumPy load performance.
+
+    Parameters
+    ----------
+    npy_path : str or Path
+        Path to the .npy file.
+
+    Returns
+    -------
+    BenchmarkResult
+        Read benchmark result.
+    """
+    npy_path = Path(npy_path)
+    file_size = npy_path.stat().st_size
+
+    start = time.perf_counter()
+    full_data = np.load(str(npy_path))
+    elapsed = time.perf_counter() - start
+
+    return BenchmarkResult(
+        name="NumPy Read",
+        operation="read",
+        format_name="NumPy",
+        elapsed_seconds=elapsed,
+        data_shape=full_data.shape,
+        data_dtype=str(full_data.dtype),
+        file_size_bytes=file_size,
+        raw_data_bytes=full_data.nbytes,
+    )
+
+
+# ---------------------------------------------------------------------------
+#  Multi-format comparison runner
+# ---------------------------------------------------------------------------
 
 def run_full_comparison(
     shape: tuple[int, ...] = (2048, 2048),
@@ -560,7 +936,7 @@ def run_full_comparison(
         fits_write = benchmark_fits_write(data, output_dir=tmpdir)
         results.append(BenchmarkComparison(nova_write, fits_write))
 
-        nova_path = Path(tmpdir) / "bench_write.nova.zarr"
+        nova_path = Path(tmpdir) / "bench_write.nova"
         fits_path = Path(tmpdir) / "bench_write.fits"
 
         # Read benchmarks
@@ -572,6 +948,132 @@ def run_full_comparison(
         nova_partial = benchmark_nova_partial_read(nova_path, partial_region)
         fits_partial = benchmark_fits_partial_read(fits_path, partial_region)
         results.append(BenchmarkComparison(nova_partial, fits_partial))
+
+    return results
+
+
+def run_multi_format_comparison(
+    shape: tuple[int, ...] = (2048, 2048),
+    dtype: str = "float64",
+    pattern: str = "realistic_sky",
+    partial_region: tuple[slice, ...] | None = None,
+    n_runs: int = 3,
+) -> dict[str, dict[str, BenchmarkResult]]:
+    """Run a comprehensive multi-format benchmark comparison.
+
+    Benchmarks NOVA, NOVA (Zarr), FITS, HDF5, and NumPy for write, read,
+    and partial read operations.  Each benchmark is run ``n_runs`` times and
+    the best (minimum) time is used.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        Data shape.
+    dtype : str
+        Data type.
+    pattern : str
+        Data pattern.
+    partial_region : tuple of slice, optional
+        Region for partial read.
+    n_runs : int
+        Number of runs per benchmark (best time is used).
+
+    Returns
+    -------
+    dict[str, dict[str, BenchmarkResult]]
+        Nested dict: ``results[format_name][operation]``.
+    """
+    if partial_region is None:
+        partial_region = tuple(slice(s // 4, s // 4 + 256) for s in shape)
+
+    data = generate_test_data(shape=shape, dtype=dtype, pattern=pattern)
+
+    results: dict[str, dict[str, BenchmarkResult]] = {}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # --- NOVA (fast binary) ---
+        best: dict[str, BenchmarkResult] = {}
+        for _ in range(n_runs):
+            w = benchmark_nova_write(data, output_dir=tmpdir)
+            if "write" not in best or w.elapsed_seconds < best["write"].elapsed_seconds:
+                best["write"] = w
+        nova_path = Path(tmpdir) / "bench_write.nova"
+        for _ in range(n_runs):
+            r = benchmark_nova_read(nova_path)
+            if "read" not in best or r.elapsed_seconds < best["read"].elapsed_seconds:
+                best["read"] = r
+        for _ in range(n_runs):
+            p = benchmark_nova_partial_read(nova_path, partial_region)
+            if "partial_read" not in best or p.elapsed_seconds < best["partial_read"].elapsed_seconds:
+                best["partial_read"] = p
+        results["NOVA"] = best
+
+        # --- NOVA (Zarr) ---
+        best = {}
+        for _ in range(n_runs):
+            w = benchmark_nova_zarr_write(data, output_dir=tmpdir)
+            if "write" not in best or w.elapsed_seconds < best["write"].elapsed_seconds:
+                best["write"] = w
+        zarr_path = Path(tmpdir) / "bench_write.nova.zarr"
+        for _ in range(n_runs):
+            r = benchmark_nova_zarr_read(zarr_path)
+            if "read" not in best or r.elapsed_seconds < best["read"].elapsed_seconds:
+                best["read"] = r
+        for _ in range(n_runs):
+            p = benchmark_nova_zarr_partial_read(zarr_path, partial_region)
+            if "partial_read" not in best or p.elapsed_seconds < best["partial_read"].elapsed_seconds:
+                best["partial_read"] = p
+        results["NOVA (Zarr)"] = best
+
+        # --- FITS ---
+        best = {}
+        for _ in range(n_runs):
+            w = benchmark_fits_write(data, output_dir=tmpdir)
+            if "write" not in best or w.elapsed_seconds < best["write"].elapsed_seconds:
+                best["write"] = w
+        fits_path = Path(tmpdir) / "bench_write.fits"
+        for _ in range(n_runs):
+            r = benchmark_fits_read(fits_path)
+            if "read" not in best or r.elapsed_seconds < best["read"].elapsed_seconds:
+                best["read"] = r
+        for _ in range(n_runs):
+            p = benchmark_fits_partial_read(fits_path, partial_region)
+            if "partial_read" not in best or p.elapsed_seconds < best["partial_read"].elapsed_seconds:
+                best["partial_read"] = p
+        results["FITS"] = best
+
+        # --- HDF5 ---
+        try:
+            best = {}
+            for _ in range(n_runs):
+                w = benchmark_hdf5_write(data, output_dir=tmpdir)
+                if "write" not in best or w.elapsed_seconds < best["write"].elapsed_seconds:
+                    best["write"] = w
+            h5_path = Path(tmpdir) / "bench_write.h5"
+            for _ in range(n_runs):
+                r = benchmark_hdf5_read(h5_path)
+                if "read" not in best or r.elapsed_seconds < best["read"].elapsed_seconds:
+                    best["read"] = r
+            for _ in range(n_runs):
+                p = benchmark_hdf5_partial_read(h5_path, partial_region)
+                if "partial_read" not in best or p.elapsed_seconds < best["partial_read"].elapsed_seconds:
+                    best["partial_read"] = p
+            results["HDF5"] = best
+        except ImportError:
+            pass  # h5py not available
+
+        # --- NumPy ---
+        best = {}
+        for _ in range(n_runs):
+            w = benchmark_numpy_write(data, output_dir=tmpdir)
+            if "write" not in best or w.elapsed_seconds < best["write"].elapsed_seconds:
+                best["write"] = w
+        npy_path = Path(tmpdir) / "bench_write.npy"
+        for _ in range(n_runs):
+            r = benchmark_numpy_read(npy_path)
+            if "read" not in best or r.elapsed_seconds < best["read"].elapsed_seconds:
+                best["read"] = r
+        results["NumPy"] = best  # NumPy has no native partial read
 
     return results
 

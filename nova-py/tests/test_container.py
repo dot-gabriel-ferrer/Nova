@@ -41,7 +41,6 @@ class TestNovaDataset:
         ds = create_dataset(store_path, data)
         assert ds.data is not None
         assert (tmp_path / "test2.nova.zarr" / "nova_metadata.json").exists()
-        assert (tmp_path / "test2.nova.zarr" / "nova_index.json").exists()
         ds.close()
 
     def test_with_wcs(self, tmp_path: Path) -> None:
@@ -89,11 +88,15 @@ class TestNovaDataset:
         ds.close()
 
     def test_chunk_index_created(self, tmp_path: Path) -> None:
-        """Test that nova_index.json is created with chunk hashes."""
+        """Test that nova_index.json is created when build_index=True."""
         store_path = tmp_path / "index.nova.zarr"
         data = np.ones((64, 64))
 
-        ds = create_dataset(store_path, data)
+        ds = NovaDataset(store_path, mode="w")
+        ds.set_science_data(data)
+        ds.save(build_index=True)
+        ds.close()
+
         index_path = store_path / "nova_index.json"
         assert index_path.exists()
 
@@ -102,7 +105,6 @@ class TestNovaDataset:
 
         assert index["@type"] == "nova:ChunkIndex"
         assert "nova:chunks" in index
-        ds.close()
 
     def test_context_manager(self, tmp_path: Path) -> None:
         """Test using NovaDataset as a context manager."""

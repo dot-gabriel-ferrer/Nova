@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 import zarr
+from zarr.codecs import ZstdCodec
 
 from nova.wcs import NovaWCS
 from nova.provenance import ProvenanceBundle
@@ -26,8 +27,10 @@ NOVA_VERSION = "0.1.0"
 DEFAULT_CHUNK_SHAPE_2D: tuple[int, int] = (512, 512)
 
 # Default compression settings
+# Level 1 gives the best speed/ratio tradeoff for typical astronomical data
+# while keeping writes nearly as fast as raw (uncompressed) I/O.
 DEFAULT_COMPRESSOR = "zstd"
-DEFAULT_COMPRESSION_LEVEL = 3
+DEFAULT_COMPRESSION_LEVEL = 1
 
 # NOVA JSON-LD context URL
 NOVA_CONTEXT = "https://nova-astro.org/v0.1/context.jsonld"
@@ -164,35 +167,29 @@ class NovaDataset:
         data : numpy.ndarray
             Science data array.
         chunks : tuple of int, optional
-            Chunk shape. Defaults to (512, 512) for 2D data.
+            Chunk shape. Auto-selected for best performance if not provided.
         compression_level : int
-            ZSTD compression level (default: 3).
+            ZSTD compression level (default: 1 for speed).
         """
         if self._root is None:
             raise RuntimeError("Store not initialized. Open in 'w' or 'a' mode.")
 
         if chunks is None:
-            if data.ndim == 2:
-                chunks = DEFAULT_CHUNK_SHAPE_2D
-            else:
-                # Auto-chunk: ~2MB per chunk
-                chunks = tuple(min(s, 512) for s in data.shape)
+            chunks = _optimal_chunks(data.shape)
 
-        try:
-            from numcodecs import Zstd
-            compressor = Zstd(level=compression_level)
-        except ImportError:
-            compressor = None
+        compressors: list[ZstdCodec] | None = (
+            [ZstdCodec(level=compression_level)] if compression_level > 0 else None
+        )
 
         data_group = self._root.require_group("data")
-        arr = data_group.create_array(
+        data_group.create_array(
             "science",
-            shape=data.shape,
             chunks=chunks,
-            dtype=data.dtype,
+            compressors=compressors,
+            data=data,
+            write_data=True,
             overwrite=True,
         )
-        arr[:] = data
 
     def set_uncertainty(
         self,
@@ -212,20 +209,17 @@ class NovaDataset:
             raise RuntimeError("Store not initialized. Open in 'w' or 'a' mode.")
 
         if chunks is None:
-            if data.ndim == 2:
-                chunks = DEFAULT_CHUNK_SHAPE_2D
-            else:
-                chunks = tuple(min(s, 512) for s in data.shape)
+            chunks = _optimal_chunks(data.shape)
 
         data_group = self._root.require_group("data")
-        arr = data_group.create_array(
+        data_group.create_array(
             "uncertainty",
-            shape=data.shape,
             chunks=chunks,
-            dtype=data.dtype,
+            compressors=[ZstdCodec(level=DEFAULT_COMPRESSION_LEVEL)],
+            data=data,
+            write_data=True,
             overwrite=True,
         )
-        arr[:] = data
 
     def set_mask(
         self,
@@ -245,20 +239,17 @@ class NovaDataset:
             raise RuntimeError("Store not initialized. Open in 'w' or 'a' mode.")
 
         if chunks is None:
-            if data.ndim == 2:
-                chunks = DEFAULT_CHUNK_SHAPE_2D
-            else:
-                chunks = tuple(min(s, 512) for s in data.shape)
+            chunks = _optimal_chunks(data.shape)
 
         data_group = self._root.require_group("data")
-        arr = data_group.create_array(
+        data_group.create_array(
             "mask",
-            shape=data.shape,
             chunks=chunks,
-            dtype=data.dtype,
+            compressors=[ZstdCodec(level=DEFAULT_COMPRESSION_LEVEL)],
+            data=data,
+            write_data=True,
             overwrite=True,
         )
-        arr[:] = data
 
     def _build_metadata(self) -> dict[str, Any]:
         """Build the root metadata dictionary."""
@@ -309,11 +300,20 @@ class NovaDataset:
 
         return index
 
-    def save(self) -> None:
+    def save(self, build_index: bool = False) -> None:
         """Write all metadata files to the store.
 
-        Writes nova_metadata.json, nova_index.json, wcs.json, and
-        provenance.json to the store root.
+        Writes nova_metadata.json, wcs.json, and provenance.json to the store
+        root.  Optionally builds the chunk integrity index (nova_index.json)
+        which requires reading back every chunk and computing SHA-256 hashes.
+
+        Parameters
+        ----------
+        build_index : bool
+            If True, build the chunk integrity index.  This is expensive for
+            large datasets and should only be used when integrity verification
+            is required (e.g. before archiving or distribution).  Default is
+            False for performance.
         """
         if self.mode == "r":
             raise RuntimeError("Cannot save in read-only mode.")
@@ -336,11 +336,12 @@ class NovaDataset:
             with open(prov_path, "w") as f:
                 json.dump(self._provenance.to_dict(), f, indent=2)
 
-        # Write chunk index
-        index = self._build_chunk_index()
-        index_path = self.store_path / "nova_index.json"
-        with open(index_path, "w") as f:
-            json.dump(index, f, indent=2)
+        # Write chunk index (expensive — reads all chunks + SHA-256)
+        if build_index:
+            index = self._build_chunk_index()
+            index_path = self.store_path / "nova_index.json"
+            with open(index_path, "w") as f:
+                json.dump(index, f, indent=2)
 
     def close(self) -> None:
         """Close the dataset."""
@@ -403,3 +404,39 @@ def create_dataset(
         ds._metadata.update(metadata)
     ds.save()
     return ds
+
+
+def _optimal_chunks(shape: tuple[int, ...]) -> tuple[int, ...]:
+    """Choose chunk sizes that balance I/O and partial-read efficiency.
+
+    For small-to-medium arrays the entire array is stored as a single chunk
+    to minimise filesystem overhead.  For very large arrays, chunks are sized
+    to ~4 MB each, keeping the number of chunk files manageable.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        Shape of the data array.
+
+    Returns
+    -------
+    tuple of int
+        Optimal chunk shape.
+    """
+    total_elements = 1
+    for s in shape:
+        total_elements *= s
+
+    # For arrays up to ~32 MB (4M float64 elements), use a single chunk
+    if total_elements <= 4_194_304:
+        return shape
+
+    # For larger arrays, target ~4 MB per chunk (512k float64 elements)
+    target_elements = 524_288
+    if len(shape) == 2:
+        # For 2D: square-ish chunks
+        side = max(1, int(target_elements ** 0.5))
+        return (min(shape[0], side), min(shape[1], side))
+
+    # For N-D: cap each dimension at 512
+    return tuple(min(s, 512) for s in shape)

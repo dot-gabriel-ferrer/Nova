@@ -11,7 +11,8 @@ from nova.wcs import NovaWCS
 from nova.fits_converter import from_fits, to_fits
 from nova.provenance import ProvenanceBundle
 from nova.integrity import compute_sha256, verify_chunk
-from nova.benchmarks import run_full_comparison, generate_test_data
+from nova.benchmarks import run_full_comparison, run_multi_format_comparison, generate_test_data
+from nova.fast_io import fast_write, fast_read
 from nova.validation import validate_metadata, validate_wcs, validate_provenance, validate_store
 from nova.ml import (
     NormalizationMetadata,
@@ -43,7 +44,11 @@ __all__ = [
     "verify_chunk",
     # Benchmarks
     "run_full_comparison",
+    "run_multi_format_comparison",
     "generate_test_data",
+    # Fast I/O
+    "fast_write",
+    "fast_read",
     # Validation
     "validate_metadata",
     "validate_wcs",

@@ -162,7 +162,7 @@ class TestNovaBenchmarks:
             assert write_result.elapsed_seconds > 0
             assert write_result.file_size_bytes > 0
 
-            nova_path = Path(tmpdir) / "bench_write.nova.zarr"
+            nova_path = Path(tmpdir) / "bench_write.nova"
             read_result = benchmark_nova_read(nova_path)
             assert read_result.format_name == "NOVA"
             assert read_result.operation == "read"
@@ -172,7 +172,7 @@ class TestNovaBenchmarks:
         data = generate_test_data(shape=(256, 256))
         with tempfile.TemporaryDirectory() as tmpdir:
             benchmark_nova_write(data, output_dir=tmpdir)
-            nova_path = Path(tmpdir) / "bench_write.nova.zarr"
+            nova_path = Path(tmpdir) / "bench_write.nova"
 
             result = benchmark_nova_partial_read(
                 nova_path, (slice(50, 100), slice(50, 100))
