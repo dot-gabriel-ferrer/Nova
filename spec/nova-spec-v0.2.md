@@ -1,4 +1,4 @@
-# NOVA Format Specification — Version 0.1 (Draft)
+# NOVA Format Specification — Version 0.2 (Draft)
 
 **Status:** Working Draft  
 **Date:** 2026-04-12  
@@ -220,6 +220,122 @@ When present, the mask array MUST:
 - Have the same shape as the science array
 - Use uint8 or uint16 dtype with bitfield semantics
 - Be stored in `data/mask/`
+
+### 5.5 Multi-Extension Datasets
+
+NOVA supports multi-extension datasets (MEF equivalent) through Zarr groups:
+
+```
+observation.nova.zarr/
+├── nova_metadata.json
+├── extensions.json            # Extension index
+├── data/
+│   └── science/               # Primary science data
+├── extensions/
+│   ├── SCI/
+│   │   ├── data/              # Image data
+│   │   └── wcs.json           # Extension-specific WCS
+│   ├── ERR/
+│   │   └── data/
+│   ├── DQ/
+│   │   └── data/
+│   └── VARIANCE/
+│       └── data/
+├── tables/
+│   └── CATALOG/               # Table data (one array per column)
+│       ├── RA/
+│       ├── DEC/
+│       └── MAG/
+└── wcs.json
+```
+
+#### 5.5.1 Extension Index
+
+Multi-extension datasets MUST include an `extensions.json` file:
+
+```json
+{
+  "@context": "https://nova-astro.org/v0.1/context.jsonld",
+  "@type": "nova:MultiExtensionDataset",
+  "nova:extensions": [
+    {
+      "nova:name": "SCI",
+      "nova:extver": 1,
+      "nova:has_data": true,
+      "nova:shape": [2048, 4096],
+      "nova:dtype": "float32",
+      "nova:header": { "EXPTIME": 300.0, "BUNIT": "e-/s" }
+    }
+  ]
+}
+```
+
+#### 5.5.2 Extension-Specific WCS
+
+Each image extension MAY have its own WCS stored in
+`extensions/<name>/wcs.json`.
+
+#### 5.5.3 FITS MEF Mapping
+
+| FITS Concept | NOVA Equivalent |
+|---|---|
+| Primary HDU | `data/science/` + root `wcs.json` |
+| ImageHDU (`EXTNAME`) | `extensions/<EXTNAME>/data/` |
+| BinTableHDU | `tables/<EXTNAME>/` |
+| `EXTVER` | `nova:extver` in `extensions.json` |
+
+### 5.6 Table Data
+
+NOVA stores tabular data as collections of column arrays within a Zarr
+group, enabling efficient columnar access (read single columns without
+loading the full table).
+
+#### 5.6.1 Table Storage
+
+Each table is a Zarr group under `tables/<name>/`, with one Zarr array
+per column.
+
+#### 5.6.2 Table Metadata
+
+Tables MUST be described in `tables.json` at the store root:
+
+```json
+{
+  "@context": "https://nova-astro.org/v0.1/context.jsonld",
+  "@type": "nova:TableCollection",
+  "nova:tables": [
+    {
+      "@type": "nova:Table",
+      "nova:name": "CATALOG",
+      "nova:nrows": 1000,
+      "nova:columns": [
+        {
+          "nova:name": "RA",
+          "nova:dtype": "float64",
+          "nova:length": 1000,
+          "nova:unit": "deg",
+          "nova:ucd": "pos.eq.ra"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 5.6.3 Column Metadata
+
+Each column SHOULD include:
+- `nova:unit` — Physical unit (IVOA VOUnits syntax)
+- `nova:ucd` — IVOA Unified Content Descriptor
+- `nova:description` — Human-readable column description
+
+### 5.7 Scaled Integers (BSCALE/BZERO)
+
+When converting from FITS, implementations MUST handle BSCALE/BZERO:
+
+- `BSCALE=1, BZERO=32768` → convert int16 to uint16
+- `BSCALE=1, BZERO=2147483648` → convert int32 to uint32
+- Other values → apply `physical = BSCALE * pixel + BZERO`
 
 ---
 
@@ -518,3 +634,4 @@ The NOVA JSON-LD context defines the vocabulary mappings:
 | Version | Date | Changes |
 |---|---|---|
 | 0.1-draft | 2026-04-12 | Initial specification draft |
+| 0.2-draft | 2026-04-12 | Multi-extension support, table data, scaled integers, extended data types |

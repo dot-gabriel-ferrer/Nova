@@ -3,9 +3,9 @@
 **A cloud-native scientific data format for professional astronomy, designed to succeed FITS.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Spec Version](https://img.shields.io/badge/spec-v0.1--draft-orange.svg)](spec/nova-spec-v0.1.md)
+[![Spec Version](https://img.shields.io/badge/spec-v0.2--draft-orange.svg)](spec/nova-spec-v0.2.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-green.svg)](nova-py/)
-[![Tests](https://img.shields.io/badge/tests-206%20passed-brightgreen.svg)](nova-py/tests/)
+[![Tests](https://img.shields.io/badge/tests-243%20passed-brightgreen.svg)](nova-py/tests/)
 
 ---
 
@@ -91,19 +91,21 @@ Overall NOVA advantages over FITS at 2048×2048 resolution:
 ```
 Nova/
 ├── spec/                        # Format specification
-│   ├── nova-spec-v0.1.md       # Full specification document
+│   ├── nova-spec-v0.2.md       # Full specification document (v0.2)
 │   ├── schemas/                 # JSON Schemas
 │   │   ├── wcs.schema.json     # WCS JSON-LD schema
 │   │   ├── nova-metadata.schema.json
-│   │   └── provenance.schema.json
+│   │   ├── provenance.schema.json
+│   │   ├── extensions.schema.json   # Multi-extension schema (v0.2)
+│   │   └── tables.schema.json       # Table data schema (v0.2)
 │   └── examples/                # Example JSON-LD documents
 │       ├── wcs-tangent-projection.json
 │       └── fits-header-converted.json
 ├── nova-py/                     # Python reference implementation
 │   ├── nova/
-│   │   ├── container.py        # Zarr v3 container management
+│   │   ├── container.py        # Zarr v3 container, MEF, tables
 │   │   ├── wcs.py              # WCS JSON-LD handling
-│   │   ├── fits_converter.py   # FITS↔NOVA converter
+│   │   ├── fits_converter.py   # FITS↔NOVA converter (MEF support)
 │   │   ├── provenance.py       # W3C PROV-DM support
 │   │   ├── integrity.py        # SHA-256 chunk integrity
 │   │   ├── validation.py       # Schema validation
@@ -114,13 +116,14 @@ Nova/
 │   │   ├── plots.py            # Benchmark plot generation
 │   │   ├── fast_io.py          # High-performance binary I/O
 │   │   └── cli.py              # Command-line interface
-│   ├── tests/                   # 206 tests
+│   ├── tests/                   # 243 tests
 │   ├── tutorials/               # Step-by-step tutorials
 │   │   ├── 01_quickstart.py
 │   │   ├── 02_fits_conversion.py
 │   │   ├── 03_cloud_access.py
 │   │   ├── 04_provenance.py
-│   │   └── 05_performance.py
+│   │   ├── 05_performance.py
+│   │   └── 06_math_tools.py
 │   └── examples/
 │       └── fits_to_nova.py     # Example conversion script
 ├── notebooks/                   # Jupyter notebooks
@@ -131,10 +134,7 @@ Nova/
 │   └── 05_Math_and_Visualization_Tools.ipynb
 ├── docs/
 │   └── benchmarks/              # Generated performance plots
-│       ├── benchmark_overview.png
-│       ├── cloud_access_speedup.png
-│       ├── compression_comparison.png
-│       └── improvement_summary.png
+├── DEVELOPMENT_PLAN.md          # Full roadmap to v1.0
 └── README.md
 ```
 
@@ -240,6 +240,47 @@ for filename, errors in results.items():
         print(f"✓ {filename}")
 ```
 
+### Multi-Extension FITS (v0.2)
+
+```python
+import nova
+
+# Convert a multi-extension FITS file (SCI+ERR+DQ+CATALOG)
+ds = nova.from_fits("hst_observation.fits", "hst.nova.zarr", all_extensions=True)
+
+# Access extensions by name
+sci_ext = ds.get_extension("SCI")
+err_ext = ds.get_extension("ERR")
+
+# Access embedded tables
+catalog = ds.get_table("CATALOG")
+print(f"Sources: {catalog.nrows}")
+print(f"Columns: {catalog.colnames}")
+ra = catalog.columns["RA"]
+
+# Round-trip back to MEF FITS
+nova.to_fits("hst.nova.zarr", "hst_out.fits", overwrite=True)
+```
+
+### Table Data (v0.2)
+
+```python
+from nova.container import NovaDataset, NovaTable
+import numpy as np
+
+ds = NovaDataset("photometry.nova.zarr", mode="w")
+ds.set_science_data(image_data)
+
+# Create a source catalog table
+catalog = NovaTable(name="SOURCES")
+catalog.add_column("RA", ra_array, unit="deg", ucd="pos.eq.ra")
+catalog.add_column("DEC", dec_array, unit="deg", ucd="pos.eq.dec")
+catalog.add_column("MAG", mag_array, unit="mag", ucd="phot.mag")
+catalog.add_column("FLAGS", flag_array)
+ds.add_table(catalog)
+ds.save()
+```
+
 ## CLI Usage
 
 ```bash
@@ -293,36 +334,37 @@ jupyter notebook notebooks/
 
 ## Specification
 
-📄 **[NOVA Format Specification v0.1 (Draft)](spec/nova-spec-v0.1.md)**
+📄 **[NOVA Format Specification v0.2 (Draft)](spec/nova-spec-v0.2.md)**
 
 ## Implementation Status
 
 | Module | Status | Tests | Description |
 |---|---|---|---|
-| `container.py` | ✅ Complete | 7 tests | Zarr v3 store management |
+| `container.py` | ✅ Complete | 7+12 tests | Zarr v3 store, multi-extension, tables |
 | `wcs.py` | ✅ Complete | 14 tests | Structured WCS (JSON-LD) |
-| `fits_converter.py` | ✅ Complete | 4 tests | Bidirectional FITS↔NOVA conversion |
+| `fits_converter.py` | ✅ Complete | 4+9 tests | Bidirectional FITS↔NOVA, MEF, BinTable |
 | `provenance.py` | ✅ Complete | 8 tests | W3C PROV-DM provenance |
 | `integrity.py` | ✅ Complete | 8 tests | SHA-256 chunk verification |
 | `validation.py` | ✅ Complete | 16+3 tests | JSON Schema validation |
 | `ml.py` | ✅ Complete | 18 tests | ML-native tensor export (INV-7) |
-| `math.py` | ✅ **New** | 49 tests | Integrated math operations |
-| `visualization.py` | ✅ **New** | 18 tests | Display & plotting tools |
+| `math.py` | ✅ Complete | 49 tests | Integrated math operations |
+| `visualization.py` | ✅ Complete | 18 tests | Display & plotting tools |
 | `benchmarks.py` | ✅ Complete | 18 tests | Performance benchmarking |
 | `fast_io.py` | ✅ Complete | 12 tests | High-performance binary I/O |
 | `cli.py` | ✅ Complete | 9 tests | Command-line interface |
 | `plots.py` | ✅ Complete | — | Benchmark plot generation |
-| *Real image tests* | ✅ **New** | 17 tests | Full pipeline with realistic data |
+| *Real image tests* | ✅ Complete | 17 tests | Full pipeline with realistic data |
+| *Phase 1 tests* | ✅ **v0.2** | 37 tests | MEF, tables, dtypes, scaling |
 
-**Total: 206 tests passing**
+**Total: 243 tests passing**
 
 ## Strategic Roadmap
 
-1. ✅ Solid specification (v0.1 draft complete)
+1. ✅ Solid specification (v0.2 draft complete)
 2. ✅ Python reference implementation (`nova-py` — all 7 design invariants implemented)
 3. ✅ Integrated math & visualization tools
-4. ✅ Comprehensive test suite with real astronomical data (206 tests)
-5. ⬜ Multi-extension FITS support & table data (v0.2)
+4. ✅ Comprehensive test suite with real astronomical data (243 tests)
+5. ✅ Multi-extension FITS support, table data, all data types (v0.2)
 6. ⬜ Cloud remote access (S3, HTTP) & pipeline adapters (v0.3)
 7. ⬜ Performance optimization & large-scale support (v0.5)
 8. ⬜ IVOA endorsement & ecosystem (v0.8)

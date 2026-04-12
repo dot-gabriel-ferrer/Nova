@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nova-astro.org/v0.2/schemas/extensions.schema.json",
+  "title": "NOVA Multi-Extension Dataset Schema",
+  "description": "JSON Schema for the NOVA extensions index file (extensions.json). Describes the multi-extension layout of a NOVA dataset, equivalent to FITS MEF.",
+  "type": "object",
+  "required": ["@context", "@type", "nova:extensions"],
+  "properties": {
+    "@context": {
+      "description": "JSON-LD context.",
+      "oneOf": [
+        { "type": "string", "const": "https://nova-astro.org/v0.1/context.jsonld" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
+    "@type": {
+      "const": "nova:MultiExtensionDataset"
+    },
+    "nova:extensions": {
+      "type": "array",
+      "description": "Ordered list of extensions in the dataset.",
+      "items": { "$ref": "#/$defs/Extension" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Extension": {
+      "type": "object",
+      "description": "A single extension in a multi-extension dataset.",
+      "required": ["nova:name"],
+      "properties": {
+        "nova:name": {
+          "type": "string",
+          "description": "Extension name (e.g. 'SCI', 'ERR', 'DQ')."
+        },
+        "nova:extver": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Extension version number (equivalent to FITS EXTVER)."
+        },
+        "nova:has_data": {
+          "type": "boolean",
+          "description": "Whether this extension contains image data."
+        },
+        "nova:shape": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "description": "Array dimensions."
+        },
+        "nova:dtype": {
+          "type": "string",
+          "description": "Data type of the array."
+        },
+        "nova:header": {
+          "type": "object",
+          "description": "Extension header keywords.",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
