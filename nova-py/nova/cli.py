@@ -186,12 +186,15 @@ def _cmd_info(args: argparse.Namespace) -> int:
     # Metadata
     meta_path = store_path / "nova_metadata.json"
     if meta_path.exists():
-        with open(meta_path) as f:
-            meta = json.load(f)
-        print(f"  Version:    {meta.get('nova:version', 'unknown')}")
-        print(f"  Created:    {meta.get('nova:created', 'unknown')}")
-        print(f"  Data Level: {meta.get('nova:data_level', 'unknown')}")
-        print(f"  Type:       {meta.get('@type', 'unknown')}")
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+            print(f"  Version:    {meta.get('nova:version', 'unknown')}")
+            print(f"  Created:    {meta.get('nova:created', 'unknown')}")
+            print(f"  Data Level: {meta.get('nova:data_level', 'unknown')}")
+            print(f"  Type:       {meta.get('@type', 'unknown')}")
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"  Error reading metadata: {e}", file=sys.stderr)
 
     # Data arrays
     import numpy as np

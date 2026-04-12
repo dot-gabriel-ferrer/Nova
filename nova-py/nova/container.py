@@ -239,22 +239,31 @@ class NovaDataset:
         # Load metadata
         metadata_path = self.store_path / "nova_metadata.json"
         if metadata_path.exists():
-            with open(metadata_path) as f:
-                self._metadata = json.load(f)
+            try:
+                with open(metadata_path) as f:
+                    self._metadata = json.load(f)
+            except (json.JSONDecodeError, ValueError):
+                self._metadata = {}
 
         # Load WCS
         wcs_path = self.store_path / "wcs.json"
         if wcs_path.exists():
-            with open(wcs_path) as f:
-                wcs_data = json.load(f)
-            self._wcs = NovaWCS.from_dict(wcs_data)
+            try:
+                with open(wcs_path) as f:
+                    wcs_data = json.load(f)
+                self._wcs = NovaWCS.from_dict(wcs_data)
+            except (json.JSONDecodeError, ValueError, KeyError):
+                pass
 
         # Load provenance
         prov_path = self.store_path / "provenance.json"
         if prov_path.exists():
-            with open(prov_path) as f:
-                prov_data = json.load(f)
-            self._provenance = ProvenanceBundle.from_dict(prov_data)
+            try:
+                with open(prov_path) as f:
+                    prov_data = json.load(f)
+                self._provenance = ProvenanceBundle.from_dict(prov_data)
+            except (json.JSONDecodeError, ValueError, KeyError):
+                pass
 
         # Load multi-extension data
         extensions_path = self.store_path / "extensions.json"

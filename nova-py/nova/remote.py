@@ -136,7 +136,7 @@ class RemoteNovaDataset:
         try:
             with fs.open(meta_path, "r") as f:
                 self._metadata = json.load(f)
-        except (FileNotFoundError, OSError):
+        except (FileNotFoundError, OSError, json.JSONDecodeError):
             pass
 
         # WCS
@@ -146,7 +146,7 @@ class RemoteNovaDataset:
                 wcs_data = json.load(f)
             from nova.wcs import NovaWCS
             self._wcs = NovaWCS.from_dict(wcs_data)
-        except (FileNotFoundError, OSError, ImportError):
+        except (FileNotFoundError, OSError, ImportError, json.JSONDecodeError):
             pass
 
         # Provenance
@@ -156,7 +156,7 @@ class RemoteNovaDataset:
                 prov_data = json.load(f)
             from nova.provenance import ProvenanceBundle
             self._provenance = ProvenanceBundle.from_dict(prov_data)
-        except (FileNotFoundError, OSError, ImportError):
+        except (FileNotFoundError, OSError, ImportError, json.JSONDecodeError):
             pass
 
     # ------------------------------------------------------------------
@@ -169,17 +169,17 @@ class RemoteNovaDataset:
         return self._metadata
 
     @property
-    def wcs(self):
+    def wcs(self) -> Any:
         """WCS metadata (None if not available remotely)."""
         return self._wcs
 
     @property
-    def provenance(self):
+    def provenance(self) -> Any:
         """Provenance bundle (None if not available)."""
         return self._provenance
 
     @property
-    def data(self):
+    def data(self) -> Any:
         """Primary science data as a lazy Zarr array.
 
         Only the slices you actually index are fetched from the remote
@@ -193,7 +193,7 @@ class RemoteNovaDataset:
             return None
 
     @property
-    def uncertainty(self):
+    def uncertainty(self) -> Any:
         """Uncertainty plane (lazy remote access)."""
         if self._root is None:
             return None
@@ -203,7 +203,7 @@ class RemoteNovaDataset:
             return None
 
     @property
-    def mask(self):
+    def mask(self) -> Any:
         """Data quality mask (lazy remote access)."""
         if self._root is None:
             return None

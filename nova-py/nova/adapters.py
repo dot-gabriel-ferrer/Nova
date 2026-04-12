@@ -124,7 +124,7 @@ def from_ccddata(
         try:
             header = dict(ccd.wcs.to_header())
             ds.wcs = NovaWCS.from_fits_header(header)
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             pass  # WCS conversion can fail for exotic projections
 
     if metadata:

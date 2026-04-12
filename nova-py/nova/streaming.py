@@ -68,7 +68,13 @@ class StreamWriter:
         self.frame_shape = frame_shape
         self.dtype = np.dtype(dtype)
         self.axis = axis
+        if buffer_size < 1:
+            raise ValueError(f"buffer_size must be >= 1, got {buffer_size}")
         self.buffer_size = buffer_size
+        if not (0 <= compression_level <= 22):
+            raise ValueError(
+                f"compression_level must be 0-22, got {compression_level}"
+            )
         self.compression_level = compression_level
         self._extra_metadata = metadata or {}
         self._buffer: list[np.ndarray] = []

@@ -171,15 +171,16 @@ def _verify_roundtrip(fits_path: Path, nova_path: Path) -> bool:
                 return True  # no image data to compare
 
         ds = NovaDataset(nova_path, mode="r")
-        if ds.data is not None:
-            converted = np.array(ds.data, dtype=float)
+        try:
+            if ds.data is not None:
+                converted = np.array(ds.data, dtype=float)
+                if original.shape != converted.shape:
+                    return False
+                return np.allclose(original, converted, equal_nan=True)
+            return True
+        finally:
             ds.close()
-            if original.shape != converted.shape:
-                return False
-            return np.allclose(original, converted, equal_nan=True)
-        ds.close()
-        return True
-    except Exception:
+    except (OSError, ValueError, TypeError, KeyError):
         return False
 
 
@@ -219,6 +220,9 @@ def migrate_directory(
     """
     src = Path(src).resolve()
     dst = Path(dst).resolve()
+
+    if parallel < 1:
+        raise ValueError(f"parallel must be >= 1, got {parallel}")
 
     fits_files = discover_fits_files(src)
 

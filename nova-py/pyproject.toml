@@ -36,7 +36,7 @@ nova = "nova.cli:main"
 [project.optional-dependencies]
 cloud = [
     "fsspec>=2023.1",
-    "aiohttp>=3.8",
+    "aiohttp>=3.13.3",
 ]
 dev = [
     "pytest>=7.0",
