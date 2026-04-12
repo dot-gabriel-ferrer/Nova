@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Spec Version](https://img.shields.io/badge/spec-v0.1--draft-orange.svg)](spec/nova-spec-v0.1.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-green.svg)](nova-py/)
-[![Tests](https://img.shields.io/badge/tests-110%20passed-brightgreen.svg)](nova-py/tests/)
+[![Tests](https://img.shields.io/badge/tests-206%20passed-brightgreen.svg)](nova-py/tests/)
 
 ---
 
@@ -24,6 +24,8 @@ structural limitations are irresolvable:
 | ML compatibility | Manual conversion required | Native float16/BFloat16, zarr→PyTorch/JAX |
 | Endianness | Big-endian fixed | Little-endian native (modern hardware) |
 | Parallel write | Not supported | Lock-free concurrent writes |
+| Math tools | External libraries required | Integrated optimized math operations |
+| Visualization | External tools (ds9, etc.) | Built-in display functions |
 
 ## Performance: NOVA vs FITS
 
@@ -106,10 +108,13 @@ Nova/
 │   │   ├── integrity.py        # SHA-256 chunk integrity
 │   │   ├── validation.py       # Schema validation
 │   │   ├── ml.py               # ML-native tensor support (INV-7)
+│   │   ├── math.py             # Integrated math operations
+│   │   ├── visualization.py    # Display & plotting tools
 │   │   ├── benchmarks.py       # Performance benchmarking
 │   │   ├── plots.py            # Benchmark plot generation
+│   │   ├── fast_io.py          # High-performance binary I/O
 │   │   └── cli.py              # Command-line interface
-│   ├── tests/                   # 110 tests
+│   ├── tests/                   # 206 tests
 │   ├── tutorials/               # Step-by-step tutorials
 │   │   ├── 01_quickstart.py
 │   │   ├── 02_fits_conversion.py
@@ -121,7 +126,9 @@ Nova/
 ├── notebooks/                   # Jupyter notebooks
 │   ├── 01_NOVA_Quickstart.ipynb
 │   ├── 02_FITS_to_NOVA_Migration.ipynb
-│   └── 03_Performance_Benchmarks.ipynb
+│   ├── 03_Performance_Benchmarks.ipynb
+│   ├── 04_Real_Astronomical_Data.ipynb
+│   └── 05_Math_and_Visualization_Tools.ipynb
 ├── docs/
 │   └── benchmarks/              # Generated performance plots
 │       ├── benchmark_overview.png
@@ -180,6 +187,46 @@ from nova.ml import to_pytorch
 torch_tensor = to_pytorch(ds.data[:], normalize_method="min_max")
 ```
 
+### Integrated Math Tools
+
+```python
+from nova.math import (
+    sigma_clipped_stats, estimate_background,
+    detect_sources, aperture_photometry,
+    stack_images, smooth_gaussian,
+)
+
+# Background estimation and source detection
+bg, rms = estimate_background(data, box_size=64)
+sources = detect_sources(data - bg, nsigma=5.0)
+
+# Aperture photometry
+for src in sources:
+    phot = aperture_photometry(
+        data, x=src["x"], y=src["y"],
+        radius=8.0, annulus_inner=12.0, annulus_outer=18.0,
+    )
+    print(f"Source at ({src['x']:.0f}, {src['y']:.0f}): flux = {phot['flux_corrected']:.0f}")
+
+# Image stacking (sigma-clipped)
+stacked = stack_images(exposures, method="sigma_clip", sigma=3.0)
+```
+
+### Easy Visualization
+
+```python
+from nova import viz
+
+# Quick-look image with stretch
+viz.display_image(data, stretch="asinh", cmap="gray", output_path="preview.png")
+
+# RGB composite
+viz.display_rgb(red, green, blue, stretch="asinh")
+
+# Side-by-side comparison
+viz.display_comparison(original, processed, show_difference=True)
+```
+
 ### Validate a NOVA Store
 
 ```python
@@ -236,6 +283,8 @@ Interactive notebooks with visualizations and charts:
 | 01 | [NOVA Quickstart](notebooks/01_NOVA_Quickstart.ipynb) | Interactive tutorial with data visualization |
 | 02 | [FITS Migration](notebooks/02_FITS_to_NOVA_Migration.ipynb) | Complete migration guide with metadata inspection |
 | 03 | [Performance Benchmarks](notebooks/03_Performance_Benchmarks.ipynb) | Interactive benchmarks with charts |
+| 04 | [Real Astronomical Data](notebooks/04_Real_Astronomical_Data.ipynb) | Full pipeline: detection, photometry, stacking |
+| 05 | [Math & Visualization](notebooks/05_Math_and_Visualization_Tools.ipynb) | Integrated math and display tools |
 
 ```bash
 pip install -e "nova-py[notebooks]"
@@ -255,21 +304,31 @@ jupyter notebook notebooks/
 | `fits_converter.py` | ✅ Complete | 4 tests | Bidirectional FITS↔NOVA conversion |
 | `provenance.py` | ✅ Complete | 8 tests | W3C PROV-DM provenance |
 | `integrity.py` | ✅ Complete | 8 tests | SHA-256 chunk verification |
-| `validation.py` | ✅ Complete | 16 tests | JSON Schema validation |
+| `validation.py` | ✅ Complete | 16+3 tests | JSON Schema validation |
 | `ml.py` | ✅ Complete | 18 tests | ML-native tensor export (INV-7) |
+| `math.py` | ✅ **New** | 49 tests | Integrated math operations |
+| `visualization.py` | ✅ **New** | 18 tests | Display & plotting tools |
 | `benchmarks.py` | ✅ Complete | 18 tests | Performance benchmarking |
+| `fast_io.py` | ✅ Complete | 12 tests | High-performance binary I/O |
 | `cli.py` | ✅ Complete | 9 tests | Command-line interface |
 | `plots.py` | ✅ Complete | — | Benchmark plot generation |
+| *Real image tests* | ✅ **New** | 17 tests | Full pipeline with realistic data |
 
-**Total: 110 tests passing**
+**Total: 206 tests passing**
 
 ## Strategic Roadmap
 
 1. ✅ Solid specification (v0.1 draft complete)
 2. ✅ Python reference implementation (`nova-py` — all 7 design invariants implemented)
-3. ⬜ IVOA endorsement
-4. ⬜ Adoption in Rubin LSST / SKA
-5. ⬜ Formal ISO standardization
+3. ✅ Integrated math & visualization tools
+4. ✅ Comprehensive test suite with real astronomical data (206 tests)
+5. ⬜ Multi-extension FITS support & table data (v0.2)
+6. ⬜ Cloud remote access (S3, HTTP) & pipeline adapters (v0.3)
+7. ⬜ Performance optimization & large-scale support (v0.5)
+8. ⬜ IVOA endorsement & ecosystem (v0.8)
+9. ⬜ Formal standardization (v1.0)
+
+📋 **[Full Development Plan →](DEVELOPMENT_PLAN.md)**
 
 ## License
 
