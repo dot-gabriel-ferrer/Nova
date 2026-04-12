@@ -505,10 +505,10 @@ def _triangle_hash(pts: np.ndarray) -> np.ndarray:
     indices = np.array(combos, dtype=np.intp)  # (M, 3)
     descriptors = np.empty((len(combos), 2), dtype=np.float64)
 
-    for k, (i, j, l) in enumerate(combos):
+    for k, (i, j, m) in enumerate(combos):
         d01 = np.linalg.norm(pts[i] - pts[j])
-        d02 = np.linalg.norm(pts[i] - pts[l])
-        d12 = np.linalg.norm(pts[j] - pts[l])
+        d02 = np.linalg.norm(pts[i] - pts[m])
+        d12 = np.linalg.norm(pts[j] - pts[m])
         sides = sorted([d01, d02, d12])
         longest = sides[2] if sides[2] > 0 else 1e-30
         descriptors[k, 0] = sides[0] / longest
@@ -1156,9 +1156,9 @@ def interpolate_bad_pixels(
             for dx in (-1, 0, 1):
                 if dy == 0 and dx == 0:
                     continue
-                ny_, nx_ = py + dy, px + dx
-                if not pad_mask[ny_, nx_] and np.isfinite(padded[ny_, nx_]):
-                    neighbours.append(padded[ny_, nx_])
+                nb_y, nb_x = py + dy, px + dx
+                if not pad_mask[nb_y, nb_x] and np.isfinite(padded[nb_y, nb_x]):
+                    neighbours.append(padded[nb_y, nb_x])
         if neighbours:
             data[by, bx] = float(np.median(neighbours))
         # else: leave as-is (NaN or original bad value)
