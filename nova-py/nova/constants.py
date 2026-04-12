@@ -11,7 +11,7 @@ from __future__ import annotations
 #  Format identity
 # ---------------------------------------------------------------------------
 
-NOVA_VERSION: str = "0.3.0"
+NOVA_VERSION: str = "0.4.0"
 """Current NOVA format + library version string."""
 
 NOVA_CONTEXT: str = "https://nova-astro.org/v0.1/context.jsonld"
@@ -62,6 +62,9 @@ Derivation: 1 / Phi^{-1}(3/4) where Phi is the normal CDF."""
 
 ARCSEC_PER_DEG: float = 3600.0
 """Number of arcseconds in one degree."""
+
+SPEED_OF_LIGHT_KMS: float = 299792.458
+"""Speed of light in km/s, used for radial velocity calculations."""
 
 # ---------------------------------------------------------------------------
 #  FITS migration helpers

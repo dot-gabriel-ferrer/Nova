@@ -30,6 +30,11 @@ from nova.adapters import to_ccddata, from_ccddata, to_nddata, nova_to_hdulist
 from nova import constants as constants
 from nova import math as math
 from nova import visualization as viz
+from nova import image_processing as image_processing
+from nova import photometry as photometry
+from nova import spectral as spectral
+from nova import coords as coords
+from nova import catalog as catalog
 
 # Convenience aliases matching README examples
 open = open_dataset
@@ -93,4 +98,10 @@ __all__ = [
     "viz",
     # Constants
     "constants",
+    # Phase 3: Advanced Analysis
+    "image_processing",
+    "photometry",
+    "spectral",
+    "coords",
+    "catalog",
 ]
