@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nova-astro.org/v0.1/schemas/provenance.schema.json",
+  "title": "NOVA Provenance Schema",
+  "description": "JSON Schema for W3C PROV-DM provenance metadata in NOVA files. Provenance is REQUIRED for L1+ data (INV-5: PROV_MANDATORY).",
+  "type": "object",
+  "required": ["@context", "@type"],
+  "properties": {
+    "@context": {
+      "description": "JSON-LD context. MUST include both NOVA and W3C PROV vocabularies.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "https://nova-astro.org/v0.1/context.jsonld" }
+        },
+        {
+          "type": "string",
+          "const": "https://nova-astro.org/v0.1/context.jsonld"
+        }
+      ]
+    },
+    "@type": {
+      "const": "prov:Bundle",
+      "description": "MUST be 'prov:Bundle'."
+    },
+    "@id": {
+      "type": "string",
+      "format": "uri",
+      "description": "Unique identifier for this provenance bundle."
+    },
+    "prov:entity": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Entity" },
+      "description": "Data entities referenced in the provenance chain."
+    },
+    "prov:activity": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Activity" },
+      "description": "Processing activities that generated or transformed data."
+    },
+    "prov:agent": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Agent" },
+      "description": "Agents (people, software, organizations) involved in processing."
+    },
+    "prov:wasGeneratedBy": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Generation" },
+      "description": "Generation relationships."
+    },
+    "prov:wasDerivedFrom": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Derivation" },
+      "description": "Derivation relationships."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Entity": {
+      "type": "object",
+      "description": "A data entity in the provenance chain (input file, output file, calibration frame, etc.).",
+      "required": ["@id", "@type"],
+      "properties": {
+        "@id": {
+          "type": "string",
+          "description": "Unique identifier for the entity (URI or CURIE)."
+        },
+        "@type": {
+          "type": "string",
+          "description": "Entity type. SHOULD be 'prov:Entity' or a NOVA subtype."
+        },
+        "nova:data_level": {
+          "type": "string",
+          "enum": ["L0", "L1", "L2", "L3"],
+          "description": "Data processing level."
+        },
+        "nova:content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "SHA-256 content hash for integrity verification."
+        },
+        "nova:filename": {
+          "type": "string",
+          "description": "Original filename."
+        },
+        "nova:format": {
+          "type": "string",
+          "description": "Data format (e.g., 'NOVA', 'FITS')."
+        },
+        "prov:wasGeneratedBy": {
+          "type": "object",
+          "properties": { "@id": { "type": "string" } },
+          "description": "Activity that generated this entity."
+        },
+        "prov:wasDerivedFrom": {
+          "oneOf": [
+            { "type": "object", "properties": { "@id": { "type": "string" } } },
+            { "type": "array", "items": { "type": "object", "properties": { "@id": { "type": "string" } } } }
+          ],
+          "description": "Entity(ies) from which this entity was derived."
+        },
+        "prov:wasAttributedTo": {
+          "type": "object",
+          "properties": { "@id": { "type": "string" } },
+          "description": "Agent to which this entity is attributed."
+        }
+      },
+      "additionalProperties": true
+    },
+    "Activity": {
+      "type": "object",
+      "description": "A processing activity (bias subtraction, flat fielding, etc.).",
+      "required": ["@id", "@type"],
+      "properties": {
+        "@id": {
+          "type": "string",
+          "description": "Unique identifier for the activity."
+        },
+        "@type": {
+          "type": "string",
+          "description": "Activity type. SHOULD be 'prov:Activity' or a NOVA subtype."
+        },
+        "prov:startedAtTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Activity start time."
+        },
+        "prov:endedAtTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Activity end time."
+        },
+        "prov:used": {
+          "oneOf": [
+            { "type": "object", "properties": { "@id": { "type": "string" } } },
+            { "type": "array", "items": { "type": "object", "properties": { "@id": { "type": "string" } } } }
+          ],
+          "description": "Entity(ies) used by this activity."
+        },
+        "prov:generated": {
+          "oneOf": [
+            { "type": "object", "properties": { "@id": { "type": "string" } } },
+            { "type": "array", "items": { "type": "object", "properties": { "@id": { "type": "string" } } } }
+          ],
+          "description": "Entity(ies) generated by this activity."
+        },
+        "prov:wasAssociatedWith": {
+          "type": "object",
+          "properties": { "@id": { "type": "string" } },
+          "description": "Agent associated with this activity."
+        },
+        "nova:software": {
+          "type": "string",
+          "description": "Software name and version used (e.g., 'nova-py v0.1.0')."
+        },
+        "nova:algorithm": {
+          "type": "string",
+          "description": "Algorithm name (e.g., 'median_combine', 'astrometry_net')."
+        },
+        "nova:parameters": {
+          "type": "object",
+          "description": "Processing parameters as key-value pairs.",
+          "additionalProperties": true
+        },
+        "nova:environment": {
+          "$ref": "#/$defs/Environment",
+          "description": "Computational environment details."
+        }
+      },
+      "additionalProperties": true
+    },
+    "Agent": {
+      "type": "object",
+      "description": "An agent involved in data processing (person, software, organization).",
+      "required": ["@id", "@type"],
+      "properties": {
+        "@id": {
+          "type": "string",
+          "description": "Unique identifier for the agent (URI, ORCID, etc.)."
+        },
+        "@type": {
+          "type": "string",
+          "enum": ["prov:SoftwareAgent", "prov:Person", "prov:Organization"],
+          "description": "Agent type."
+        },
+        "nova:name": {
+          "type": "string",
+          "description": "Agent name."
+        },
+        "nova:version": {
+          "type": "string",
+          "description": "Software version (for SoftwareAgent)."
+        },
+        "nova:orcid": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$",
+          "description": "ORCID identifier (for Person)."
+        },
+        "prov:actedOnBehalfOf": {
+          "type": "object",
+          "properties": { "@id": { "type": "string" } },
+          "description": "Agent on whose behalf this agent acted."
+        }
+      },
+      "additionalProperties": true
+    },
+    "Generation": {
+      "type": "object",
+      "description": "A generation relationship between an activity and an entity.",
+      "required": ["prov:entity", "prov:activity"],
+      "properties": {
+        "prov:entity": { "type": "object", "properties": { "@id": { "type": "string" } } },
+        "prov:activity": { "type": "object", "properties": { "@id": { "type": "string" } } },
+        "prov:atTime": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Derivation": {
+      "type": "object",
+      "description": "A derivation relationship between entities.",
+      "required": ["prov:generatedEntity", "prov:usedEntity"],
+      "properties": {
+        "prov:generatedEntity": { "type": "object", "properties": { "@id": { "type": "string" } } },
+        "prov:usedEntity": { "type": "object", "properties": { "@id": { "type": "string" } } },
+        "prov:activity": { "type": "object", "properties": { "@id": { "type": "string" } } }
+      }
+    },
+    "Environment": {
+      "type": "object",
+      "description": "Computational environment details for reproducibility.",
+      "properties": {
+        "nova:os": { "type": "string" },
+        "nova:python_version": { "type": "string" },
+        "nova:packages": {
+          "type": "object",
+          "description": "Package name → version pairs.",
+          "additionalProperties": { "type": "string" }
+        },
+        "nova:hardware": {
+          "type": "string",
+          "description": "Hardware description (CPU, GPU, etc.)."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

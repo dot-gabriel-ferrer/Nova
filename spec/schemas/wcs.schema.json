@@ -1,0 +1,379 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nova-astro.org/v0.1/schemas/wcs.schema.json",
+  "title": "NOVA WCS Schema",
+  "description": "JSON Schema for the NOVA World Coordinate System (WCS) metadata. Replaces FITS keyword-based WCS with a structured, typed, and validatable JSON-LD object.",
+  "type": "object",
+  "required": ["@context", "@type", "nova:naxes", "nova:axes", "nova:transform"],
+  "properties": {
+    "@context": {
+      "description": "JSON-LD context. MUST reference the NOVA vocabulary.",
+      "oneOf": [
+        { "type": "string", "const": "https://nova-astro.org/v0.1/context.jsonld" },
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "https://nova-astro.org/v0.1/context.jsonld" }
+        }
+      ]
+    },
+    "@type": {
+      "const": "nova:WCS",
+      "description": "Type identifier. MUST be 'nova:WCS'."
+    },
+    "nova:naxes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7,
+      "description": "Number of WCS axes. Equivalent to FITS WCSAXES."
+    },
+    "nova:axes": {
+      "type": "array",
+      "description": "Ordered list of axis definitions. Length MUST equal nova:naxes.",
+      "items": { "$ref": "#/$defs/Axis" },
+      "minItems": 1,
+      "maxItems": 7
+    },
+    "nova:transform": {
+      "description": "Coordinate transform from pixel to world coordinates.",
+      "$ref": "#/$defs/Transform"
+    },
+    "nova:celestial_frame": {
+      "description": "Reference frame for celestial coordinates.",
+      "$ref": "#/$defs/CelestialFrame"
+    },
+    "nova:spectral_frame": {
+      "description": "Reference frame for spectral coordinates.",
+      "$ref": "#/$defs/SpectralFrame"
+    },
+    "nova:temporal_frame": {
+      "description": "Reference frame for time coordinates.",
+      "$ref": "#/$defs/TemporalFrame"
+    },
+    "nova:projection": {
+      "description": "Map projection for celestial axes.",
+      "$ref": "#/$defs/Projection"
+    },
+    "nova:distortion": {
+      "description": "Non-linear distortion model (SIP, TPV, etc.).",
+      "$ref": "#/$defs/Distortion"
+    },
+    "nova:fits_origin": {
+      "type": "object",
+      "description": "Original FITS WCS keywords preserved for round-trip fidelity.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Axis": {
+      "type": "object",
+      "description": "A single WCS axis definition.",
+      "required": ["@type", "nova:index", "nova:ctype", "nova:crpix", "nova:crval", "nova:unit"],
+      "properties": {
+        "@type": {
+          "type": "string",
+          "enum": [
+            "nova:CelestialAxis",
+            "nova:SpectralAxis",
+            "nova:TemporalAxis",
+            "nova:StokesAxis",
+            "nova:LinearAxis"
+          ],
+          "description": "Axis type classification."
+        },
+        "nova:index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based axis index. Maps to FITS axis number (1-based) as index+1."
+        },
+        "nova:ctype": {
+          "type": "string",
+          "maxLength": 68,
+          "description": "Coordinate type. Uses FITS CTYPE conventions for compatibility (e.g., 'RA---TAN', 'DEC--TAN', 'FREQ', 'WAVE')."
+        },
+        "nova:crpix": {
+          "type": "number",
+          "description": "Reference pixel position (1-based, matching FITS convention)."
+        },
+        "nova:crval": {
+          "type": "number",
+          "description": "Coordinate value at the reference pixel."
+        },
+        "nova:unit": {
+          "type": "string",
+          "description": "Physical unit of the coordinate value. SHOULD use IVOA VOUnits syntax (e.g., 'deg', 'Hz', 'm', 's')."
+        },
+        "nova:ucd": {
+          "type": "string",
+          "description": "IVOA Unified Content Descriptor (e.g., 'pos.eq.ra', 'pos.eq.dec', 'em.freq')."
+        },
+        "nova:name": {
+          "type": "string",
+          "description": "Human-readable axis name (e.g., 'Right Ascension', 'Declination')."
+        },
+        "nova:stokes_params": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["I", "Q", "U", "V", "RR", "LL", "RL", "LR", "XX", "YY", "XY", "YX"]
+          },
+          "description": "Stokes parameters for StokesAxis type."
+        },
+        "nova:restfrq": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Rest frequency in Hz for spectral axes. Equivalent to FITS RESTFRQ."
+        },
+        "nova:restwave": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Rest wavelength in meters for spectral axes. Equivalent to FITS RESTWAV."
+        },
+        "nova:timesys": {
+          "type": "string",
+          "enum": ["UTC", "TAI", "TDB", "TCB", "TT", "GPS"],
+          "description": "Time reference system for temporal axes."
+        },
+        "nova:mjd_ref": {
+          "type": "number",
+          "description": "Modified Julian Date reference point for temporal axes."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Transform": {
+      "type": "object",
+      "description": "Coordinate transform definition.",
+      "required": ["@type"],
+      "oneOf": [
+        { "$ref": "#/$defs/AffineTransform" },
+        { "$ref": "#/$defs/CompositeTransform" }
+      ]
+    },
+    "AffineTransform": {
+      "type": "object",
+      "description": "Affine (linear) coordinate transform using a CD matrix. Equivalent to FITS CDi_j keywords.",
+      "required": ["@type", "nova:cd_matrix"],
+      "properties": {
+        "@type": {
+          "const": "nova:AffineTransform"
+        },
+        "nova:cd_matrix": {
+          "type": "array",
+          "description": "The CD matrix as a row-major 2D array. cd_matrix[i][j] = CDi_j in FITS notation. Dimensions MUST match nova:naxes × nova:naxes.",
+          "items": {
+            "type": "array",
+            "items": { "type": "number" }
+          }
+        },
+        "nova:pixel_scale": {
+          "description": "Derived pixel scale for convenience.",
+          "$ref": "#/$defs/ValueWithUnit"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CompositeTransform": {
+      "type": "object",
+      "description": "A chain of transforms applied in sequence (first to last).",
+      "required": ["@type", "nova:transforms"],
+      "properties": {
+        "@type": {
+          "const": "nova:CompositeTransform"
+        },
+        "nova:transforms": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Transform" },
+          "minItems": 2,
+          "description": "Ordered list of transforms. Applied in sequence from first to last."
+        }
+      },
+      "additionalProperties": false
+    },
+    "CelestialFrame": {
+      "type": "object",
+      "description": "Celestial reference frame. Equivalent to FITS RADESYS + EQUINOX.",
+      "required": ["@type", "nova:system"],
+      "properties": {
+        "@type": {
+          "const": "nova:CelestialFrame"
+        },
+        "nova:system": {
+          "type": "string",
+          "enum": ["ICRS", "FK5", "FK4", "FK4-NO-E", "GAPPT", "GALACTIC", "SUPERGALACTIC"],
+          "description": "Reference coordinate system."
+        },
+        "nova:equinox": {
+          "type": "number",
+          "description": "Equinox of the coordinate system (Julian year). Required for FK4/FK5, ignored for ICRS."
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpectralFrame": {
+      "type": "object",
+      "description": "Spectral reference frame.",
+      "required": ["@type", "nova:specsys"],
+      "properties": {
+        "@type": {
+          "const": "nova:SpectralFrame"
+        },
+        "nova:specsys": {
+          "type": "string",
+          "enum": ["TOPOCENT", "GEOCENTR", "BARYCENT", "HELIOCEN", "LSRK", "LSRD", "GALACTOC", "LOCALGRP", "CMBDIPOL"],
+          "description": "Spectral reference frame."
+        },
+        "nova:ssysobs": {
+          "type": "string",
+          "description": "Spectral reference frame of observation."
+        },
+        "nova:velref": {
+          "type": "integer",
+          "description": "Velocity reference frame code (AIPS convention)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "TemporalFrame": {
+      "type": "object",
+      "description": "Temporal reference frame.",
+      "required": ["@type", "nova:timesys"],
+      "properties": {
+        "@type": {
+          "const": "nova:TemporalFrame"
+        },
+        "nova:timesys": {
+          "type": "string",
+          "enum": ["UTC", "TAI", "TDB", "TCB", "TT", "GPS"],
+          "description": "Time reference system."
+        },
+        "nova:mjd_ref": {
+          "type": "number",
+          "description": "Modified Julian Date of reference epoch."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Projection": {
+      "type": "object",
+      "description": "Map projection for celestial coordinates. The projection code is extracted from the CTYPE suffix (e.g., 'TAN' from 'RA---TAN').",
+      "required": ["@type", "nova:code"],
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "Projection type identifier."
+        },
+        "nova:code": {
+          "type": "string",
+          "description": "Three-letter FITS projection code (e.g., 'TAN', 'SIN', 'AIT', 'MOL', 'CAR').",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "nova:name": {
+          "type": "string",
+          "description": "Human-readable projection name."
+        },
+        "nova:pv_params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["nova:axis", "nova:index", "nova:value"],
+            "properties": {
+              "nova:axis": { "type": "integer" },
+              "nova:index": { "type": "integer" },
+              "nova:value": { "type": "number" }
+            }
+          },
+          "description": "Projection parameters. Equivalent to FITS PVi_j keywords."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Distortion": {
+      "type": "object",
+      "description": "Non-linear distortion model.",
+      "required": ["@type"],
+      "oneOf": [
+        { "$ref": "#/$defs/SIPDistortion" },
+        { "$ref": "#/$defs/TPVDistortion" }
+      ]
+    },
+    "SIPDistortion": {
+      "type": "object",
+      "description": "Simple Imaging Polynomial (SIP) distortion model.",
+      "required": ["@type", "nova:a_order", "nova:b_order", "nova:a_coefficients", "nova:b_coefficients"],
+      "properties": {
+        "@type": {
+          "const": "nova:SIPDistortion"
+        },
+        "nova:a_order": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Polynomial order for A coefficients."
+        },
+        "nova:b_order": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Polynomial order for B coefficients."
+        },
+        "nova:a_coefficients": {
+          "type": "object",
+          "description": "SIP A coefficients as key-value pairs (e.g., '2_0': 1.5e-6).",
+          "additionalProperties": { "type": "number" }
+        },
+        "nova:b_coefficients": {
+          "type": "object",
+          "description": "SIP B coefficients as key-value pairs.",
+          "additionalProperties": { "type": "number" }
+        },
+        "nova:ap_order": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Polynomial order for inverse A coefficients."
+        },
+        "nova:bp_order": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Polynomial order for inverse B coefficients."
+        },
+        "nova:ap_coefficients": {
+          "type": "object",
+          "description": "SIP inverse A coefficients.",
+          "additionalProperties": { "type": "number" }
+        },
+        "nova:bp_coefficients": {
+          "type": "object",
+          "description": "SIP inverse B coefficients.",
+          "additionalProperties": { "type": "number" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "TPVDistortion": {
+      "type": "object",
+      "description": "Tangent Plane polynomial (TPV) distortion model.",
+      "required": ["@type", "nova:pv_coefficients"],
+      "properties": {
+        "@type": {
+          "const": "nova:TPVDistortion"
+        },
+        "nova:pv_coefficients": {
+          "type": "object",
+          "description": "TPV coefficients as key-value pairs (e.g., '1_0': 1.0, '1_1': 0.0).",
+          "additionalProperties": { "type": "number" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ValueWithUnit": {
+      "type": "object",
+      "description": "A numeric value with a physical unit.",
+      "required": ["nova:value", "nova:unit"],
+      "properties": {
+        "nova:value": { "type": "number" },
+        "nova:unit": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

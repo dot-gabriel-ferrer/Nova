@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nova-astro.org/v0.1/schemas/nova-metadata.schema.json",
+  "title": "NOVA Root Metadata Schema",
+  "description": "JSON Schema for the NOVA root metadata file (nova_metadata.json). Defines the top-level structure for observation metadata, instrument description, and data level classification.",
+  "type": "object",
+  "required": ["@context", "@type", "nova:version", "nova:created"],
+  "properties": {
+    "@context": {
+      "description": "JSON-LD context. MUST reference the NOVA vocabulary.",
+      "oneOf": [
+        { "type": "string", "const": "https://nova-astro.org/v0.1/context.jsonld" },
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "https://nova-astro.org/v0.1/context.jsonld" }
+        }
+      ]
+    },
+    "@type": {
+      "type": "string",
+      "description": "Type identifier. SHOULD be 'nova:Observation' or a subtype.",
+      "default": "nova:Observation"
+    },
+    "@id": {
+      "type": "string",
+      "format": "uri",
+      "description": "Unique identifier for this dataset (URI)."
+    },
+    "nova:version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "NOVA format version (semantic versioning)."
+    },
+    "nova:created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this NOVA file was created."
+    },
+    "nova:modified": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the last modification."
+    },
+    "nova:data_level": {
+      "type": "string",
+      "enum": ["L0", "L1", "L2", "L3"],
+      "description": "Data processing level. L0=raw, L1=calibrated, L2=derived, L3=catalog."
+    },
+    "nova:instrument": {
+      "$ref": "#/$defs/Instrument"
+    },
+    "nova:observation": {
+      "$ref": "#/$defs/ObservationDetails"
+    },
+    "nova:data_arrays": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/DataArrayDescriptor" },
+      "description": "Descriptors for all data arrays in the store."
+    },
+    "nova:content_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "SHA-256 hash of the complete dataset for integrity verification."
+    },
+    "nova:fits_origin": {
+      "type": "object",
+      "description": "Original FITS metadata preserved for round-trip fidelity.",
+      "properties": {
+        "nova:filename": { "type": "string" },
+        "nova:header_cards": { "type": "integer" },
+        "nova:extensions": { "type": "integer" },
+        "nova:bitpix": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "nova:keywords": {
+      "type": "object",
+      "description": "Additional metadata keywords. Preserves FITS keywords not mapped to structured fields.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Instrument": {
+      "type": "object",
+      "description": "Instrument identification.",
+      "required": ["@type", "nova:name"],
+      "properties": {
+        "@type": {
+          "const": "nova:Instrument"
+        },
+        "nova:name": {
+          "type": "string",
+          "description": "Instrument name (e.g., 'DECam', 'HSC', 'MUSE')."
+        },
+        "nova:telescope": {
+          "type": "string",
+          "description": "Telescope name (e.g., 'Blanco 4m', 'Subaru')."
+        },
+        "nova:observatory": {
+          "type": "string",
+          "description": "Observatory name or MPC code."
+        },
+        "nova:detector": {
+          "type": "string",
+          "description": "Detector/CCD identifier."
+        },
+        "nova:filter": {
+          "type": "string",
+          "description": "Filter name or identifier."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ObservationDetails": {
+      "type": "object",
+      "description": "Observation parameters.",
+      "properties": {
+        "@type": {
+          "const": "nova:ObservationDetails"
+        },
+        "nova:target": {
+          "type": "string",
+          "description": "Target name."
+        },
+        "nova:ra": {
+          "type": "number",
+          "description": "Target RA in degrees."
+        },
+        "nova:dec": {
+          "type": "number",
+          "description": "Target Dec in degrees."
+        },
+        "nova:exptime": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Exposure time in seconds."
+        },
+        "nova:date_obs": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Observation start time (ISO 8601)."
+        },
+        "nova:date_end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Observation end time (ISO 8601)."
+        },
+        "nova:mjd_obs": {
+          "type": "number",
+          "description": "Modified Julian Date of observation start."
+        },
+        "nova:airmass": {
+          "type": "number",
+          "minimum": 1.0,
+          "description": "Airmass at observation midpoint."
+        }
+      },
+      "additionalProperties": false
+    },
+    "DataArrayDescriptor": {
+      "type": "object",
+      "description": "Descriptor for a data array in the NOVA store.",
+      "required": ["nova:path", "nova:dtype", "nova:shape"],
+      "properties": {
+        "nova:path": {
+          "type": "string",
+          "description": "Path within the Zarr store (e.g., 'data/science')."
+        },
+        "nova:role": {
+          "type": "string",
+          "enum": ["science", "uncertainty", "mask", "preview", "auxiliary"],
+          "description": "Semantic role of this array."
+        },
+        "nova:dtype": {
+          "type": "string",
+          "description": "Array data type (e.g., 'float64', 'float16', 'uint8')."
+        },
+        "nova:shape": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "description": "Array dimensions."
+        },
+        "nova:chunks": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "Chunk shape."
+        },
+        "nova:compression": {
+          "type": "string",
+          "enum": ["zstd", "lz4", "jxl", "none"],
+          "description": "Compression codec used."
+        },
+        "nova:compression_level": {
+          "type": "integer",
+          "description": "Compression level (codec-dependent)."
+        },
+        "nova:fill_value": {
+          "description": "Fill value for missing data."
+        },
+        "nova:unit": {
+          "type": "string",
+          "description": "Physical unit of the data values."
+        },
+        "nova:ucd": {
+          "type": "string",
+          "description": "IVOA Unified Content Descriptor."
+        },
+        "nova:ml_normalization": {
+          "$ref": "#/$defs/MLNormalization",
+          "description": "ML normalization metadata (INV-7)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "MLNormalization": {
+      "type": "object",
+      "description": "Machine learning normalization metadata for direct tensor compatibility.",
+      "properties": {
+        "@type": {
+          "const": "nova:MLNormalization"
+        },
+        "nova:method": {
+          "type": "string",
+          "enum": ["min_max", "z_score", "robust", "log", "asinh", "custom"],
+          "description": "Normalization method."
+        },
+        "nova:min": { "type": "number" },
+        "nova:max": { "type": "number" },
+        "nova:mean": { "type": "number" },
+        "nova:std": { "type": "number" },
+        "nova:median": { "type": "number" },
+        "nova:mad": { "type": "number", "description": "Median absolute deviation." }
+      },
+      "additionalProperties": false
+    }
+  }
+}
