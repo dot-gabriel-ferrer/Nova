@@ -342,7 +342,7 @@ def validate_store(store_path: str | Path) -> dict[str, list[str]]:
         else:
             results["provenance.json"] = []
 
-    # Validate nova_index.json (optional — only built on demand)
+    # Validate nova_index.json (optional -- only built on demand)
     index_path = store_path / "nova_index.json"
     if index_path.exists():
         with open(index_path) as f:

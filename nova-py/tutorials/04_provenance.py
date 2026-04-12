@@ -1,8 +1,8 @@
-"""Tutorial 04: W3C PROV-DM Provenance — Tracking data lineage.
+"""Tutorial 04: W3C PROV-DM Provenance -- Tracking data lineage.
 
 This tutorial demonstrates NOVA's provenance tracking:
-  1. Create a raw observation (L0 data) — no provenance required
-  2. Create a calibrated dataset (L1) — provenance REQUIRED (INV-5)
+  1. Create a raw observation (L0 data) -- no provenance required
+  2. Create a calibrated dataset (L1) -- provenance REQUIRED (INV-5)
   3. Build a processing pipeline provenance chain
   4. Validate provenance requirements
   5. Inspect and query the provenance graph
@@ -41,7 +41,7 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
 
-        # ── Step 1: L0 Raw Data — No provenance required ─────────────────
+        # -- Step 1: L0 Raw Data -- No provenance required -----------------
         print("Step 1: Create L0 raw data (provenance optional)")
         print("-" * 70)
 
@@ -55,16 +55,16 @@ def main() -> None:
         ds_raw.save()
         ds_raw.close()
 
-        # Validate — L0 doesn't require provenance
+        # Validate -- L0 doesn't require provenance
         empty_prov = ProvenanceBundle()
         errors = empty_prov.validate("L0")
         print(f"  Data level:    L0 (raw)")
         print(f"  Has provenance: No")
-        print(f"  Validation:    {'✓ PASS' if not errors else '✗ FAIL'}")
-        print(f"  → L0 data does NOT require provenance (INV-5)")
+        print(f"  Validation:    {'OK PASS' if not errors else 'FAIL FAIL'}")
+        print(f"  -> L0 data does NOT require provenance (INV-5)")
         print()
 
-        # ── Step 2: L1 Calibrated Data — Provenance REQUIRED ─────────────
+        # -- Step 2: L1 Calibrated Data -- Provenance REQUIRED -------------
         print("Step 2: Create L1 calibrated data (provenance REQUIRED)")
         print("-" * 70)
 
@@ -77,7 +77,7 @@ def main() -> None:
         no_prov = ProvenanceBundle()
         errors = no_prov.validate("L1")
         print(f"  Without provenance:")
-        print(f"    Validation: ✗ FAIL")
+        print(f"    Validation: FAIL FAIL")
         for err in errors:
             print(f"    Error: {err}")
         print()
@@ -147,7 +147,7 @@ def main() -> None:
         print(f"    Entities:   {len(prov.entities)}")
         print(f"    Activities: {len(prov.activities)}")
         print(f"    Agents:     {len(prov.agents)}")
-        print(f"    Validation: {'✓ PASS' if not errors else '✗ FAIL'}")
+        print(f"    Validation: {'OK PASS' if not errors else 'FAIL FAIL'}")
         print()
 
         # Save calibrated data with provenance
@@ -159,7 +159,7 @@ def main() -> None:
         ds_cal.save()
         ds_cal.close()
 
-        # ── Step 3: Inspect the provenance chain ─────────────────────────
+        # -- Step 3: Inspect the provenance chain -------------------------
         print("Step 3: Inspect the provenance JSON-LD")
         print("-" * 70)
 
@@ -172,8 +172,8 @@ def main() -> None:
         print("  ...")
         print()
 
-        # ── Step 4: Build a multi-step pipeline ──────────────────────────
-        print("Step 4: Multi-step pipeline provenance (L0 → L1 → L2)")
+        # -- Step 4: Build a multi-step pipeline --------------------------
+        print("Step 4: Multi-step pipeline provenance (L0 -> L1 -> L2)")
         print("-" * 70)
 
         # Add L2 processing (e.g., source extraction)
@@ -220,13 +220,13 @@ def main() -> None:
 
         # Validate L2
         errors = prov_l2.validate("L2")
-        print(f"  Pipeline chain: L0 → L1 (calibration) → L2 (source extraction)")
+        print(f"  Pipeline chain: L0 -> L1 (calibration) -> L2 (source extraction)")
         print(f"  Total entities:   {len(prov_l2.entities)}")
         print(f"  Total activities: {len(prov_l2.activities)}")
-        print(f"  Validation:       {'✓ PASS' if not errors else '✗ FAIL'}")
+        print(f"  Validation:       {'OK PASS' if not errors else 'FAIL FAIL'}")
         print()
 
-        # ── Step 5: Query the provenance graph ────────────────────────────
+        # -- Step 5: Query the provenance graph ----------------------------
         print("Step 5: Query the provenance graph")
         print("-" * 70)
 
@@ -256,12 +256,12 @@ def main() -> None:
                     print(f"    {key}: {val}")
 
         print()
-        print("  → Complete provenance chain is machine-readable and queryable!")
-        print("  → Meets W3C PROV-DM standard for interoperability.")
+        print("  -> Complete provenance chain is machine-readable and queryable!")
+        print("  -> Meets W3C PROV-DM standard for interoperability.")
 
     print()
     print("=" * 70)
-    print("  ✓ Tutorial complete! Provenance tracking demonstrated.")
+    print("  OK Tutorial complete! Provenance tracking demonstrated.")
     print("=" * 70)
 
 

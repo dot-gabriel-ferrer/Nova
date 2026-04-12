@@ -60,7 +60,7 @@ class TestCLI:
         assert result == 1
 
     def test_convert_fits_to_nova(self, tmp_path: Path) -> None:
-        """Test FITS → NOVA conversion via CLI."""
+        """Test FITS -> NOVA conversion via CLI."""
         pytest.importorskip("astropy")
         from astropy.io import fits
 
@@ -87,7 +87,7 @@ class TestCLI:
         assert nova_path.exists()
 
     def test_convert_nova_to_fits(self, tmp_path: Path) -> None:
-        """Test NOVA → FITS conversion via CLI."""
+        """Test NOVA -> FITS conversion via CLI."""
         pytest.importorskip("astropy")
 
         store_path = tmp_path / "input.nova.zarr"

@@ -17,7 +17,7 @@ File layout (nova_fast format)::
     [...]      zstd-compressed raw array data  (or raw data if level == 0)
 
 The format is intentionally simple so that readers in any language (C, Rust,
-Julia, …) can parse it without Zarr or HDF5 libraries.
+Julia, ...) can parse it without Zarr or HDF5 libraries.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ def fast_write(
     data : numpy.ndarray
         Array to write.  Must be C-contiguous; will be made contiguous if not.
     compression_level : int
-        Zstd compression level (0 = no compression, 1–22 = zstd levels).
+        Zstd compression level (0 = no compression, 1?22 = zstd levels).
         Level 1 gives the best speed/ratio tradeoff.
     threads : int
         Number of zstd compression threads (-1 = all cores).
@@ -88,7 +88,7 @@ def fast_write(
             payload = cctx.compress(data.tobytes())
             f.write(payload)
         else:
-            # Zero-copy write — fastest path
+            # Zero-copy write -- fastest path
             data.tofile(f)
 
     return path.stat().st_size
@@ -134,7 +134,7 @@ def fast_read(path: str | Path) -> np.ndarray:
             raw = dctx.decompress(f.read())
             return np.frombuffer(raw, dtype=dtype).reshape(shape)
         else:
-            # Zero-copy read — fastest path
+            # Zero-copy read -- fastest path
             return np.fromfile(f, dtype=dtype).reshape(shape)
 
 

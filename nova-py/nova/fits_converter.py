@@ -1,4 +1,4 @@
-"""FITS↔NOVA converter module.
+"""FITS<->NOVA converter module.
 
 Provides bidirectional conversion between FITS and NOVA formats,
 ensuring lossless round-trip fidelity (INV-1: BACKWARD_COMPAT).
@@ -346,7 +346,7 @@ def to_fits(
 
     hdu_list: list[Any] = []
 
-    # ── Multi-extension dataset ───────────────────────────────────
+    # -- Multi-extension dataset -----------------------------------
     if ds.extensions:
         # Create a PrimaryHDU (may be empty)
         primary_data = None
@@ -394,7 +394,7 @@ def to_fits(
                             tbl_hdu.header[f"TUNIT{i+1}"] = unit
                 hdu_list.append(tbl_hdu)
 
-    # ── Single-extension dataset ──────────────────────────────────
+    # -- Single-extension dataset ----------------------------------
     else:
         if ds.data is None:
             raise ValueError("NOVA dataset contains no science data.")
@@ -424,7 +424,7 @@ def to_fits(
     hdul.writeto(str(fits_path), overwrite=overwrite)
 
 
-# ── Helper functions ──────────────────────────────────────────────────────
+# -- Helper functions ------------------------------------------------------
 
 
 def _ensure_little_endian(data: np.ndarray) -> np.ndarray:
@@ -495,9 +495,9 @@ def _preserve_keywords(ds: NovaDataset, header: dict[str, Any]) -> None:
 def _prepare_fits_data(data: np.ndarray) -> np.ndarray:
     """Prepare a NumPy array for writing to a FITS file.
 
-    Handles float16→float32 upscaling and big-endian conversion.
+    Handles float16->float32 upscaling and big-endian conversion.
     """
-    # Handle float16/bfloat16 → float32 upscaling
+    # Handle float16/bfloat16 -> float32 upscaling
     if data.dtype in (np.float16,):
         import warnings
         warnings.warn(
@@ -507,7 +507,7 @@ def _prepare_fits_data(data: np.ndarray) -> np.ndarray:
         )
         data = data.astype(np.float32)
 
-    # Handle complex types — FITS doesn't support complex natively;
+    # Handle complex types -- FITS doesn't support complex natively;
     # store as float with doubled last dimension.
     if np.issubdtype(data.dtype, np.complexfloating):
         real_dtype = np.float32 if data.dtype == np.complex64 else np.float64
@@ -602,7 +602,7 @@ def _build_conversion_provenance(
     fits_path: Path,
     nova_path: Path,
 ) -> "ProvenanceBundle":
-    """Build a provenance bundle for FITS→NOVA conversion."""
+    """Build a provenance bundle for FITS->NOVA conversion."""
     from nova.provenance import ProvenanceBundle
 
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()

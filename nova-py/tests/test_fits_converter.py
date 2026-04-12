@@ -12,7 +12,7 @@ from nova.wcs import NovaWCS
 
 
 class TestFITSConverter:
-    """Tests for FITS↔NOVA conversion.
+    """Tests for FITS<->NOVA conversion.
 
     These tests only run if astropy is available.
     """
@@ -51,7 +51,7 @@ class TestFITSConverter:
         hdul.writeto(str(path), overwrite=True)
 
     def test_fits_to_nova(self, tmp_path: Path) -> None:
-        """Test FITS → NOVA conversion."""
+        """Test FITS -> NOVA conversion."""
         from nova.fits_converter import from_fits
 
         fits_path = tmp_path / "test.fits"
@@ -72,7 +72,7 @@ class TestFITSConverter:
         ds.close()
 
     def test_nova_to_fits(self, tmp_path: Path) -> None:
-        """Test NOVA → FITS round-trip conversion."""
+        """Test NOVA -> FITS round-trip conversion."""
         from nova.fits_converter import from_fits, to_fits
 
         fits_path = tmp_path / "original.fits"

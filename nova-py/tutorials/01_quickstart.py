@@ -1,4 +1,4 @@
-"""Tutorial 01: NOVA Quickstart — Creating your first NOVA dataset.
+"""Tutorial 01: NOVA Quickstart -- Creating your first NOVA dataset.
 
 This step-by-step tutorial demonstrates how to create, write, and read
 a NOVA dataset from scratch. No FITS file needed.
@@ -35,8 +35,8 @@ def main() -> None:
     print("=" * 70)
     print()
 
-    # ── Step 1: Create synthetic data ─────────────────────────────────────
-    print("Step 1: Generate a synthetic 1024×1024 astronomical image")
+    # -- Step 1: Create synthetic data -------------------------------------
+    print("Step 1: Generate a synthetic 1024x1024 astronomical image")
     print("-" * 70)
 
     rng = np.random.default_rng(42)
@@ -56,7 +56,7 @@ def main() -> None:
     print(f"  Raw size:   {sky.nbytes / (1024*1024):.1f} MB")
     print()
 
-    # ── Step 2: Define WCS metadata ───────────────────────────────────────
+    # -- Step 2: Define WCS metadata ---------------------------------------
     print("Step 2: Define World Coordinate System (WCS) metadata")
     print("-" * 70)
 
@@ -79,7 +79,7 @@ def main() -> None:
     print(f"  Pixel scale: {wcs.transform.pixel_scale} arcsec/pixel")
     print()
 
-    # ── Step 3: Create and save NOVA dataset ──────────────────────────────
+    # -- Step 3: Create and save NOVA dataset ------------------------------
     print("Step 3: Create and save NOVA dataset")
     print("-" * 70)
 
@@ -110,7 +110,7 @@ def main() -> None:
         print(f"  Compression: {sky.nbytes / total_size:.1f}x")
         print()
 
-        # ── Step 4: Re-open and inspect ───────────────────────────────────
+        # -- Step 4: Re-open and inspect -----------------------------------
         print("Step 4: Re-open and inspect the dataset")
         print("-" * 70)
 
@@ -128,8 +128,8 @@ def main() -> None:
         print(f"  Telescope:   {meta.get('nova:telescope', 'N/A')}")
         print()
 
-        # ── Step 5: Partial read (cloud-native access) ────────────────────
-        print("Step 5: Read a 256×256 cutout (cloud-native chunk access)")
+        # -- Step 5: Partial read (cloud-native access) --------------------
+        print("Step 5: Read a 256x256 cutout (cloud-native chunk access)")
         print("-" * 70)
 
         import time
@@ -142,14 +142,14 @@ def main() -> None:
         print(f"  Read time:    {(t1 - t0)*1000:.2f} ms")
         print(f"  Data read:    {cutout.nbytes / 1024:.1f} KB (not {sky.nbytes / (1024*1024):.1f} MB)")
         print()
-        print("  → NOVA only reads the chunks needed, not the full file!")
-        print("  → In cloud storage, this means ≤2 HTTP requests.")
+        print("  -> NOVA only reads the chunks needed, not the full file!")
+        print("  -> In cloud storage, this means <=2 HTTP requests.")
 
         ds2.close()
 
     print()
     print("=" * 70)
-    print("  ✓ Tutorial complete! You've created your first NOVA dataset.")
+    print("  OK Tutorial complete! You've created your first NOVA dataset.")
     print("=" * 70)
 
 

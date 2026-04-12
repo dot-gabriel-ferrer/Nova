@@ -1,73 +1,80 @@
-# NOVA Development Plan — From Prototype to FITS Replacement
+# NOVA Development Plan -- From Prototype to FITS Replacement
 
-**Status:** Active Development  
-**Version:** 0.2.0 → 1.0.0 Roadmap  
+**Status:** Active Development
+**Version:** 0.3.0 -> 1.0.0 Roadmap
 **Updated:** 2026-04-12
 
 ---
 
 ## Vision
 
-NOVA (Next-generation Open Volumetric Archive) is designed to be a **drop-in replacement for FITS** in every astronomical pipeline — from raw telescope data to archived science products. The goal is to provide a format that is:
+NOVA (Next-generation Open Volumetric Archive) is designed to be a drop-in replacement
+for FITS in every astronomical pipeline -- from raw telescope data to archived science
+products. The goal is to provide a format that is:
 
 - **Faster** than FITS (zero-copy I/O, ZSTD compression, little-endian native)
 - **Smarter** than FITS (typed JSON-LD metadata, schema validation, provenance)
 - **Cloud-native** (chunk-indexed, partial reads, HTTP Range support)
 - **ML-ready** (native float16/BFloat16, tensor export, normalization metadata)
 - **Self-contained** (integrated math, visualization, and analysis tools)
-- **Pipeline-compatible** (FITS↔NOVA round-trip, minimal migration effort)
+- **Pipeline-compatible** (FITS<->NOVA round-trip, minimal migration effort)
 
 ---
 
-## Current State (v0.2.0)
+## Current State (v0.3.0)
 
-### ✅ Completed
+### Completed
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| Format Specification | ✅ v0.2 Draft | 5-layer architecture, 7 design invariants, MEF + tables |
-| Container (Zarr v3) | ✅ Complete | Store management, chunking, compression, multi-extension, tables |
-| WCS (JSON-LD) | ✅ Complete | 15+ projections, FITS round-trip, per-extension WCS |
-| FITS Converter | ✅ Complete | Bidirectional, MEF support, BinTable, scaled integers |
-| Provenance (W3C PROV-DM) | ✅ Complete | Entity/Activity/Agent model |
-| Integrity (SHA-256) | ✅ Complete | Per-chunk verification |
-| Validation | ✅ Complete | JSON Schema, 5 schema files |
-| ML Tools | ✅ Complete | 5 normalizations, PyTorch/JAX export |
-| Math Tools | ✅ Complete | Statistics, convolution, detection, photometry, spectral |
-| Visualization | ✅ Complete | 8 display functions, multiple stretches |
-| Benchmarks | ✅ Complete | 5-format comparison, plot generation |
-| Fast I/O | ✅ Complete | NOVAFAST binary format, zero-copy |
-| CLI | ✅ Complete | convert, info, validate, benchmark |
-| Multi-Extension | ✅ **v0.2** | MEF ↔ NOVA, per-extension WCS, auto HDU mapping |
-| Table Data | ✅ **v0.2** | Columnar storage, BINTABLE conversion, column metadata |
-| Data Types | ✅ **v0.2** | complex64/128, all integer types, scaled integers |
-| Test Suite | ✅ 243 tests | All modules + Phase 1 + real image pipeline tests |
-| Tutorials | ✅ 6 scripts | Quickstart through math tools |
-| Notebooks | ✅ 5 notebooks | Interactive tutorials with visualization |
+| Component | Version | Details |
+|-----------|---------|---------|
+| Format Specification | v0.3 Draft | 5-layer architecture, 7 design invariants, MEF + tables |
+| Container (Zarr v3) | v0.1 | Store management, chunking, compression, multi-ext, tables |
+| WCS (JSON-LD) | v0.1 | 15+ projections, FITS round-trip, per-extension WCS |
+| FITS Converter | v0.2 | Bidirectional, MEF support, BinTable, scaled integers |
+| Provenance (W3C PROV-DM) | v0.1 | Entity/Activity/Agent model |
+| Integrity (SHA-256) | v0.1 | Per-chunk verification |
+| Validation | v0.1 | JSON Schema, 5 schema files |
+| ML Tools | v0.1 | 5 normalizations, PyTorch/JAX export |
+| Math Tools | v0.1 | Statistics, convolution, detection, photometry, spectral |
+| Visualization | v0.1 | 8 display functions, multiple stretches |
+| Benchmarks | v0.1 | 5-format comparison, plot generation |
+| Fast I/O | v0.1 | NOVAFAST binary format, zero-copy |
+| CLI | v0.2 | convert, info, validate, benchmark, migrate |
+| Multi-Extension | v0.2 | MEF <-> NOVA, per-extension WCS, auto HDU mapping |
+| Table Data | v0.2 | Columnar storage, BINTABLE conversion, column metadata |
+| Data Types | v0.2 | complex64/128, all integer types, scaled integers |
+| Remote Access | v0.3 | HTTP/S3/GCS/Azure via fsspec, lazy chunk loading |
+| Batch Migration | v0.3 | Directory conversion, parallel, verify, incremental |
+| Streaming | v0.3 | Append-mode writes, time-series ingest, buffered I/O |
+| Pipeline Adapters | v0.3 | CCDData, NDData, HDUList bidirectional adapters |
+| Test Suite | v0.3 | 270 tests across all modules and features |
+| Tutorials | v0.3 | 7 scripts covering all features |
+| Notebooks | v0.1 | 5 interactive notebooks with visualization |
 
 ---
 
-## Phase 1: Core Stability & FITS Parity (v0.2.0) — ✅ COMPLETE
+## Phase 1: Core Stability and FITS Parity (v0.2.0) -- COMPLETE
 
-**Goal:** Achieve complete feature parity with FITS, ensuring NOVA can handle every scenario FITS handles.
+**Goal:** Achieve complete feature parity with FITS, ensuring NOVA can handle
+every scenario FITS handles.
 
-### 1.1 Multi-Extension Support ✅
+### 1.1 Multi-Extension Support [done]
 
 - [x] Support reading FITS multi-extension files (MEF) with automatic HDU mapping
-- [x] Map FITS extensions → NOVA groups (SCI, ERR, DQ, VARIANCE)
+- [x] Map FITS extensions -> NOVA groups (SCI, ERR, DQ, VARIANCE)
 - [x] Support IMAGE, TABLE, and BINTABLE HDU types
 - [x] Preserve extension-specific WCS and headers
 - [x] Test with synthetic multi-extension FITS files (37 tests)
 
-### 1.2 Table Data Support ✅
+### 1.2 Table Data Support [done]
 
 - [x] Implement NOVA table storage (columnar arrays in Zarr)
-- [x] Support FITS BINTABLE → NOVA table conversion
+- [x] Support FITS BINTABLE -> NOVA table conversion
 - [x] Support variable-length arrays (VLA) in tables
 - [x] Column metadata with UCDs and units
 - [x] Efficient columnar access (read single columns without full table)
 
-### 1.3 Header Keyword Completeness ✅
+### 1.3 Header Keyword Completeness [done]
 
 - [x] Map ALL standard FITS keywords to NOVA JSON-LD properties
 - [x] Support HIERARCH keywords (long keyword names)
@@ -75,16 +82,16 @@ NOVA (Next-generation Open Volumetric Archive) is designed to be a **drop-in rep
 - [x] Preserve keyword ordering and comments
 - [x] Handle non-standard/instrument-specific keywords gracefully
 
-### 1.4 Compression Codecs ✅
+### 1.4 Compression Codecs [done]
 
 - [x] ZSTD compression with configurable levels (default)
-- [ ] Add LZ4 compression support (deferred — requires Zarr codec registration)
+- [ ] Add LZ4 compression support (deferred -- requires Zarr codec registration)
 - [ ] Add JPEG-XL lossy compression for preview images (deferred)
 - [x] Configurable per-array compression (different levels per extension)
-- [ ] Rice compression compatibility (deferred — low priority)
+- [ ] Rice compression compatibility (deferred -- low priority)
 - [x] Benchmark ZSTD against FITS uncompressed
 
-### 1.5 Data Type Coverage ✅
+### 1.5 Data Type Coverage [done]
 
 - [x] Support complex64/complex128 arrays
 - [x] Support integer types: int8, uint8, int16, uint16, int32, uint32, int64
@@ -94,48 +101,51 @@ NOVA (Next-generation Open Volumetric Archive) is designed to be a **drop-in rep
 
 ---
 
-## Phase 2: Cloud & Pipeline Integration (v0.3.0)
+## Phase 2: Cloud and Pipeline Integration (v0.3.0) -- COMPLETE
 
 **Goal:** Make NOVA work seamlessly in cloud-based astronomical pipelines.
 
-### 2.1 Remote Store Access
+### 2.1 Remote Store Access [done]
 
-- [ ] Support opening NOVA stores from HTTP/HTTPS URLs
-- [ ] Support opening from S3 (boto3 backend)
-- [ ] Support opening from Google Cloud Storage
-- [ ] Support opening from Azure Blob Storage
-- [ ] Lazy loading: only fetch chunks on access
-- [ ] Authenticated access (OAuth2, AWS STS tokens)
+- [x] Support opening NOVA stores from HTTP/HTTPS URLs
+- [x] Support opening from S3 (boto3 backend via fsspec)
+- [x] Support opening from Google Cloud Storage (gcsfs)
+- [x] Support opening from Azure Blob Storage (adlfs)
+- [x] Lazy loading: only fetch chunks on access
+- [x] Authenticated access via storage_options (OAuth2, AWS STS tokens)
 
-### 2.2 Pipeline Adapters
+### 2.2 Pipeline Adapters [done]
 
-- [ ] `astropy.io.nova` adapter — read/write NOVA like FITS via astropy
-- [ ] `ccdproc` compatibility layer — use NOVA as drop-in for CCDData
-- [ ] `photutils` integration — read NOVA catalogs, write photometry results
-- [ ] `specutils` integration — read/write NOVA spectra
-- [ ] `reproject` integration — reproject NOVA images to different WCS
-- [ ] DASK array backend — parallel processing of NOVA chunks
-- [ ] Xarray integration — labeled N-D arrays from NOVA stores
+- [x] CCDData adapter -- convert NOVA <-> astropy CCDData
+- [x] NDData adapter -- lightweight astropy NDData conversion
+- [x] HDUList adapter -- convert NOVA -> in-memory astropy HDUList
+- [x] Bidirectional round-trip (from_ccddata, to_ccddata)
+- [ ] Full ccdproc compatibility layer (deferred -- needs ccdproc testing)
+- [ ] photutils integration (deferred)
+- [ ] specutils integration (deferred)
+- [ ] DASK array backend (deferred to Phase 4)
 
-### 2.3 Pipeline Migration Tool
+### 2.3 Pipeline Migration Tool [done]
 
-- [ ] Automated FITS→NOVA migration script for entire directories/archives
-- [ ] Parallel batch conversion (multiprocessing)
-- [ ] Verification report after migration (checksums, WCS, metadata)
-- [ ] Dry-run mode (analyze without converting)
-- [ ] Incremental migration (skip already converted files)
-- [ ] Rollback capability (keep FITS originals, symlink)
+- [x] Automated FITS->NOVA migration script for entire directories/archives
+- [x] Parallel batch conversion (multiprocessing)
+- [x] Verification report after migration (checksums, data comparison)
+- [x] Dry-run mode (analyze without converting)
+- [x] Incremental migration (skip already converted files)
+- [x] CLI: `nova migrate` subcommand
 
-### 2.4 Streaming I/O
+### 2.4 Streaming I/O [done]
 
-- [ ] Support appending data to existing arrays (time series, monitoring)
-- [ ] Support streaming writes (data arrives in chunks)
-- [ ] Real-time data ingestion from telescope control systems
-- [ ] WebSocket support for live data streaming
+- [x] Support appending data to existing arrays (time series, monitoring)
+- [x] Support streaming writes (data arrives in chunks)
+- [x] Buffered StreamWriter with configurable flush interval
+- [x] Metadata written automatically on close
+- [ ] WebSocket support for live data streaming (deferred)
+- [ ] Real-time telescope control system ingestion (deferred)
 
 ---
 
-## Phase 3: Advanced Math & Analysis (v0.4.0)
+## Phase 3: Advanced Math and Analysis (v0.4.0)
 
 **Goal:** Make NOVA a complete analysis environment, reducing the need for external tools.
 
@@ -182,7 +192,7 @@ NOVA (Next-generation Open Volumetric Archive) is designed to be a **drop-in rep
 
 ---
 
-## Phase 4: Performance & Scale (v0.5.0)
+## Phase 4: Performance and Scale (v0.5.0)
 
 **Goal:** Optimise for production-scale astronomical pipelines.
 
@@ -212,20 +222,20 @@ NOVA (Next-generation Open Volumetric Archive) is designed to be a **drop-in rep
 
 ---
 
-## Phase 5: Ecosystem & Adoption (v0.8.0)
+## Phase 5: Ecosystem and Adoption (v0.8.0)
 
 **Goal:** Build the ecosystem needed for widespread adoption.
 
 ### 5.1 Language Bindings
 
-- [ ] C library (`libnova`) — for integration with compiled pipelines
-- [ ] Julia package (`Nova.jl`) — for the growing Julia astronomy community
-- [ ] Rust library (`nova-rs`) — for high-performance services
-- [ ] JavaScript/TypeScript (`nova-js`) — for web-based visualisation
+- [ ] C library (libnova) -- for integration with compiled pipelines
+- [ ] Julia package (Nova.jl) -- for the growing Julia astronomy community
+- [ ] Rust library (nova-rs) -- for high-performance services
+- [ ] JavaScript/TypeScript (nova-js) -- for web-based visualisation
 
 ### 5.2 Viewer Applications
 
-- [ ] `nova-viewer` — lightweight desktop viewer (Qt/Tkinter)
+- [ ] nova-viewer -- lightweight desktop viewer (Qt/Tkinter)
 - [ ] Web-based viewer (JS, similar to JS9/DS9)
 - [ ] VS Code extension for NOVA file inspection
 - [ ] Jupyter widget for interactive NOVA display
@@ -239,7 +249,7 @@ NOVA (Next-generation Open Volumetric Archive) is designed to be a **drop-in rep
 - [ ] DOI integration for archived datasets
 - [ ] Datalink integration
 
-### 5.4 Documentation & Community
+### 5.4 Documentation and Community
 
 - [ ] API reference documentation (Sphinx/ReadTheDocs)
 - [ ] User guide with complete examples
@@ -289,42 +299,55 @@ This matrix tracks feature parity with FITS and its ecosystem tools:
 
 | Feature | FITS | NOVA | Status |
 |---------|------|------|--------|
-| 2D images | ✅ | ✅ | ✅ Complete |
-| 3D data cubes | ✅ | ✅ | ✅ Complete |
-| N-D arrays | ✅ | ✅ | ✅ Complete |
-| Binary tables | ✅ | ✅ | ✅ Complete (v0.2) |
-| ASCII tables | ✅ | ✅ | ✅ Complete (v0.2) |
-| Multiple extensions | ✅ | ✅ | ✅ Complete (v0.2) |
-| Random groups | ✅ (deprecated) | N/A | Not needed |
-| Tile compression | ✅ | ✅ | ✅ (native chunks) |
-| Variable-length arrays | ✅ | ✅ | ✅ Complete (v0.2) |
-| Complex data types | ✅ | ✅ | ✅ Complete (v0.2) |
-| Scaled integers | ✅ | ✅ | ✅ Complete (v0.2) |
+| 2D images | Yes | Yes | Complete |
+| 3D data cubes | Yes | Yes | Complete |
+| N-D arrays | Yes | Yes | Complete |
+| Binary tables | Yes | Yes | Complete (v0.2) |
+| ASCII tables | Yes | Yes | Complete (v0.2) |
+| Multiple extensions | Yes | Yes | Complete (v0.2) |
+| Random groups | Yes (deprecated) | N/A | Not needed |
+| Tile compression | Yes | Yes | Complete (native chunks) |
+| Variable-length arrays | Yes | Yes | Complete (v0.2) |
+| Complex data types | Yes | Yes | Complete (v0.2) |
+| Scaled integers | Yes | Yes | Complete (v0.2) |
 
 ### Metadata Features
 
 | Feature | FITS | NOVA | Status |
 |---------|------|------|--------|
-| Header keywords | ✅ (80-char) | ✅ (JSON-LD) | ✅ Complete |
-| WCS | ✅ | ✅ (structured) | ✅ Complete |
-| Keyword types | Limited | Full JSON types | ✅ Complete |
-| Schema validation | ❌ | ✅ | ✅ Complete |
-| Provenance | ❌ | ✅ (W3C PROV-DM) | ✅ Complete |
-| HIERARCH keys | ✅ | ✅ (native) | ✅ Complete |
-| HISTORY/COMMENT | ✅ | ✅ (JSON arrays) | ✅ Complete |
+| Header keywords | Yes (80-char) | Yes (JSON-LD) | Complete |
+| WCS | Yes | Yes (structured) | Complete |
+| Keyword types | Limited | Full JSON types | Complete |
+| Schema validation | No | Yes | Complete |
+| Provenance | No | Yes (W3C PROV-DM) | Complete |
+| HIERARCH keys | Yes | Yes (native) | Complete |
+| HISTORY/COMMENT | Yes | Yes (JSON arrays) | Complete |
 
 ### Tools Comparison
 
 | Tool | FITS Equivalent | NOVA | Status |
 |------|----------------|------|--------|
-| fitsinfo/fitsheader | nova info | ✅ CLI | ✅ Complete |
-| fitsverify | nova validate | ✅ CLI | ✅ Complete |
-| fpack/funpack | Native compression | ✅ Built-in | ✅ Complete |
-| ds9/JS9 viewer | nova.viz | ✅ Module | ✅ Complete |
-| IRAF imstat | nova.math stats | ✅ Module | ✅ Complete |
-| SExtractor detect | nova.math detect | ✅ Module | ✅ Complete |
-| photutils aperture | nova.math aperture | ✅ Module | ✅ Complete |
-| swarp stack | nova.math stack | ✅ Module | ✅ Complete |
+| fitsinfo/fitsheader | nova info | CLI | Complete |
+| fitsverify | nova validate | CLI | Complete |
+| fpack/funpack | Native compression | Built-in | Complete |
+| ds9/JS9 viewer | nova.viz | Module | Complete |
+| IRAF imstat | nova.math stats | Module | Complete |
+| SExtractor detect | nova.math detect | Module | Complete |
+| photutils aperture | nova.math aperture | Module | Complete |
+| swarp stack | nova.math stack | Module | Complete |
+
+### Pipeline Integration (v0.3)
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| Remote HTTP access | Complete | fsspec + lazy Zarr |
+| S3 cloud storage | Complete | boto3/s3fs backend |
+| GCS cloud storage | Complete | gcsfs backend |
+| Azure Blob storage | Complete | adlfs backend |
+| astropy CCDData | Complete | Bidirectional adapter |
+| astropy NDData | Complete | Lightweight adapter |
+| Batch migration | Complete | Parallel, verify, incremental |
+| Time-series append | Complete | StreamWriter with buffering |
 
 ---
 
@@ -337,18 +360,17 @@ This matrix tracks feature parity with FITS and its ecosystem tools:
 nova info *.fits
 
 # Check conversion compatibility
-nova convert --dry-run *.fits
+nova migrate raw_fits/ nova_archive/ --dry-run
 ```
 
 ### Step 2: Convert (Parallel, reversible)
 
 ```bash
-# Batch convert FITS → NOVA
-nova convert *.fits --output-dir nova_data/
+# Batch convert FITS -> NOVA
+nova migrate raw_fits/ nova_archive/ --parallel 4 --verify
 
-# Verify round-trip fidelity
-nova convert nova_data/*.nova.zarr --output-dir fits_verify/
-diff fits_verify/ original/
+# Or convert individual files
+nova convert observation.fits observation.nova.zarr
 ```
 
 ### Step 3: Update Pipeline Code
@@ -360,12 +382,17 @@ hdul = fits.open("observation.fits")
 data = hdul[0].data
 header = hdul[0].header
 
-# After (NOVA) — minimal changes
+# After (NOVA) -- minimal changes
 import nova
 ds = nova.open("observation.nova.zarr")
 data = ds.data[:]           # Same NumPy array
 header = ds.metadata        # JSON dict instead of FITS Header
 wcs = ds.wcs                # Structured WCS object
+
+# Or use the CCDData adapter for zero-effort migration
+from nova.adapters import to_ccddata
+ccd = to_ccddata("observation.nova.zarr", unit="adu")
+# ccd works exactly like CCDData from astropy
 ```
 
 ### Step 4: Leverage NOVA Advantages
@@ -383,40 +410,44 @@ sources = detect_sources(data - bg, nsigma=5.0)
 from nova.ml import to_tensor
 tensor, meta = to_tensor(data, normalize_method="z_score",
                          add_batch_dim=True, add_channel_dim=True)
+
+# Time-series streaming (impossible with FITS)
+from nova.streaming import open_appendable, append_frame
+writer = open_appendable("timeseries.nova.zarr", frame_shape=(256, 256))
+for frame in camera_stream():
+    append_frame(writer, frame)
+writer.close()
 ```
 
 ---
 
 ## Development Priorities (Next Steps)
 
-### Immediate (v0.3.0 — Next Release)
+### Immediate (v0.4.0 -- Next Release)
 
-1. **Cloud remote access** — HTTP/S3 store backends
-2. **Astropy adapter** — `astropy.io.nova` for seamless integration
-3. **Pipeline adapters** — ccdproc, photutils, specutils integration
-4. **Batch migration tool** — Convert entire archives
-5. **DASK backend** — Parallel chunk processing
+1. **PSF modelling** -- Moffat, multi-Gaussian
+2. **Image registration** -- WCS-based and feature-based
+3. **SIP distortion** -- Full WCS distortion support
+4. **Advanced photometry** -- PSF fitting, crowded fields
 
-### Short-term (v0.4.0)
+### Short-term (v0.5.0)
 
-1. **PSF modelling** — Moffat, multi-Gaussian
-2. **Image registration** — WCS-based and feature-based
-3. **SIP distortion** — Full WCS distortion support
-4. **Advanced photometry** — PSF fitting, crowded fields
+1. **Performance optimization** -- Cython/Numba acceleration
+2. **DASK backend** -- Parallel chunk processing
+3. **Large-scale support** -- >1 TB datasets
 
-### Medium-term (v0.5.0)
+### Medium-term (v0.8.0)
 
-1. **Performance optimization** — Cython/Numba acceleration
-2. **Large-scale support** — >1 TB datasets
-3. **Advanced photometry** — PSF fitting, crowded fields
-4. **Language bindings** — C, Julia, Rust
+1. **Language bindings** -- C, Julia, Rust
+2. **Viewer applications** -- Desktop and web
+3. **Archive integration** -- IVOA TAP, SODA
 
 ### Long-term (v1.0.0)
 
-1. **IVOA standardization** — Formal recommendation
-2. **Survey pipeline integration** — Rubin LSST, SKA
-3. **ISO standardization** — International standard
-4. **Full ecosystem** — Viewers, editors, archive services
+1. **IVOA standardization** -- Formal recommendation
+2. **Survey pipeline integration** -- Rubin LSST, SKA
+3. **ISO standardization** -- International standard
+4. **Full ecosystem** -- Viewers, editors, archive services
 
 ---
 

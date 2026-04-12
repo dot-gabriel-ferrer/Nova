@@ -1,7 +1,7 @@
 """NOVA command-line interface.
 
 Provides CLI tools for NOVA format operations:
-- nova convert: FITS↔NOVA conversion
+- nova convert: FITS<->NOVA conversion
 - nova info: Display dataset information
 - nova validate: Validate NOVA stores
 - nova benchmark: Run performance benchmarks
@@ -32,7 +32,7 @@ def main(argv: list[str] | None = None) -> int:
     """
     parser = argparse.ArgumentParser(
         prog="nova",
-        description="NOVA — Next-generation Open Volumetric Archive CLI",
+        description="NOVA -- Next-generation Open Volumetric Archive CLI",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -136,9 +136,9 @@ def _cmd_convert(args: argparse.Namespace) -> int:
     is_nova_input = input_path.name.endswith(".nova.zarr")
 
     if is_fits_input:
-        # FITS → NOVA
+        # FITS -> NOVA
         from nova.fits_converter import from_fits
-        print(f"Converting FITS → NOVA: {input_path} → {output_path}")
+        print(f"Converting FITS -> NOVA: {input_path} -> {output_path}")
         start = time.perf_counter()
         ds = from_fits(input_path, output_path)
         elapsed = time.perf_counter() - start
@@ -151,9 +151,9 @@ def _cmd_convert(args: argparse.Namespace) -> int:
         return 0
 
     elif is_nova_input:
-        # NOVA → FITS
+        # NOVA -> FITS
         from nova.fits_converter import to_fits
-        print(f"Converting NOVA → FITS: {input_path} → {output_path}")
+        print(f"Converting NOVA -> FITS: {input_path} -> {output_path}")
         start = time.perf_counter()
         to_fits(input_path, output_path, overwrite=args.overwrite)
         elapsed = time.perf_counter() - start
@@ -256,16 +256,16 @@ def _cmd_validate(args: argparse.Namespace) -> int:
 
     for filename, errors in results.items():
         if errors:
-            print(f"\n  ✗ {filename} ({len(errors)} errors)")
+            print(f"\n  FAIL {filename} ({len(errors)} errors)")
             for error in errors:
                 print(f"    - {error}")
             total_errors += len(errors)
         else:
-            print(f"  ✓ {filename}")
+            print(f"  OK   {filename}")
 
     print()
     if total_errors == 0:
-        print("Validation passed ✓")
+        print("Validation passed")
         return 0
     else:
         print(f"Validation failed: {total_errors} error(s) found")

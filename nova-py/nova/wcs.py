@@ -20,7 +20,7 @@ PROJECTION_NAMES: dict[str, str] = {
     "SIN": "Slant Orthographic",
     "AIT": "Hammer-Aitoff",
     "MOL": "Mollweide",
-    "CAR": "Plate Carrée",
+    "CAR": "Plate Carree",
     "MER": "Mercator",
     "STG": "Stereographic",
     "ARC": "Zenithal Equidistant",

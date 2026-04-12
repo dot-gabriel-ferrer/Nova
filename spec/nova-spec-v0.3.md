@@ -1,9 +1,9 @@
-# NOVA Format Specification — Version 0.2 (Draft)
+# NOVA Format Specification -- Version 0.3 (Draft)
 
-**Status:** Working Draft  
-**Date:** 2026-04-12  
-**Authors:** NOVA Project Contributors  
-**License:** CC-BY-4.0  
+**Status:** Working Draft
+**Date:** 2026-04-12
+**Authors:** NOVA Project Contributors
+**License:** CC-BY-4.0
 
 ---
 
@@ -50,8 +50,8 @@ SHALL violate them without unanimous Working Group approval.
 
 | ID | Invariant | Requirement |
 |---|---|---|
-| INV-1 | BACKWARD_COMPAT | Lossless FITS↔NOVA conversion for all valid FITS files |
-| INV-2 | CLOUD_FIRST | Chunk index MUST reside in first 8KB; any region accessible in ≤2 HTTP requests |
+| INV-1 | BACKWARD_COMPAT | Lossless FITS<->NOVA conversion for all valid FITS files |
+| INV-2 | CLOUD_FIRST | Chunk index MUST reside in first 8KB; any region accessible in <=2 HTTP requests |
 | INV-3 | HUMAN_READABLE | JSON-LD metadata manifest MUST be readable with any text editor |
 | INV-4 | INTEGRITY_BY_DEFAULT | Every chunk MUST have a SHA-256 hash in the index |
 | INV-5 | PROV_MANDATORY | W3C PROV-DM provenance REQUIRED for reduced/calibrated data |
@@ -60,7 +60,7 @@ SHALL violate them without unanimous Working Group approval.
 
 ---
 
-## 3. Layer 1 — Container & Access
+## 3. Layer 1 -- Container & Access
 
 ### 3.1 Base Container
 
@@ -76,7 +76,7 @@ named `nova_index.json`. This file MUST:
 
 1. Be less than 8,192 bytes (8KB) for the core index
 2. Contain byte offsets and sizes for all data chunks
-3. Include SHA-256 hashes for each chunk (see §6)
+3. Include SHA-256 hashes for each chunk (see section 6)
 
 ```json
 {
@@ -100,14 +100,14 @@ named `nova_index.json`. This file MUST:
 Implementations SHOULD support HTTP Range requests to enable cloud-native access.
 A client MUST be able to access any data region with at most 2 HTTP requests:
 
-1. **Request 1:** Fetch `nova_index.json` (≤8KB)
+1. **Request 1:** Fetch `nova_index.json` (<=8KB)
 2. **Request 2:** Fetch the specific chunk(s) using byte range from the index
 
 ### 3.4 File Extension
 
 NOVA files MUST use one of the following extensions:
-- `.nova.zarr` — Directory store
-- `.nova.zip` — ZIP-archived store
+- `.nova.zarr` -- Directory store
+- `.nova.zip` -- ZIP-archived store
 
 ### 3.5 Magic Bytes
 
@@ -119,7 +119,7 @@ When stored as a single-file archive, the first 8 bytes MUST be:
 
 ---
 
-## 4. Layer 2 — Compression & Encoding
+## 4. Layer 2 -- Compression & Encoding
 
 ### 4.1 Byte Order
 
@@ -173,7 +173,7 @@ Default chunk shape for 2D images: `(512, 512)` for float64 data (2 MB per chunk
 
 ---
 
-## 5. Layer 3 — Scientific Data
+## 5. Layer 3 -- Scientific Data
 
 ### 5.1 Array Groups
 
@@ -181,29 +181,29 @@ A NOVA store organizes data into Zarr groups:
 
 ```
 observation.nova.zarr/
-├── nova_index.json          # Chunk index (§3.2)
-├── nova_metadata.json       # Root metadata (§7)
-├── data/
-│   ├── science/             # Primary science array
-│   │   ├── zarr.json
-│   │   └── c.<chunk_keys>
-│   ├── uncertainty/         # Co-located uncertainty plane
-│   │   ├── zarr.json
-│   │   └── c.<chunk_keys>
-│   ├── mask/                # Data quality mask
-│   │   ├── zarr.json
-│   │   └── c.<chunk_keys>
-│   └── preview/             # JPEG-XL preview (optional)
-│       ├── zarr.json
-│       └── c.<chunk_keys>
-└── wcs.json                 # WCS metadata (§8)
++-- nova_index.json          # Chunk index (section 3.2)
++-- nova_metadata.json       # Root metadata (section 7)
++-- data/
+|   +-- science/             # Primary science array
+|   |   +-- zarr.json
+|   |   +-- c.<chunk_keys>
+|   +-- uncertainty/         # Co-located uncertainty plane
+|   |   +-- zarr.json
+|   |   +-- c.<chunk_keys>
+|   +-- mask/                # Data quality mask
+|   |   +-- zarr.json
+|   |   +-- c.<chunk_keys>
+|   +-- preview/             # JPEG-XL preview (optional)
+|       +-- zarr.json
+|       +-- c.<chunk_keys>
++-- wcs.json                 # WCS metadata (section 8)
 ```
 
 ### 5.2 Science Array
 
 The primary science data MUST be stored in `data/science/` as a Zarr v3 array.
 
-- The array dtype MUST be one of the types in §4.3.
+- The array dtype MUST be one of the types in section 4.3.
 - The array MUST have at least 2 dimensions for image data.
 - Fill value MUST be `NaN` for floating-point types, `0` for integer types.
 
@@ -227,26 +227,26 @@ NOVA supports multi-extension datasets (MEF equivalent) through Zarr groups:
 
 ```
 observation.nova.zarr/
-├── nova_metadata.json
-├── extensions.json            # Extension index
-├── data/
-│   └── science/               # Primary science data
-├── extensions/
-│   ├── SCI/
-│   │   ├── data/              # Image data
-│   │   └── wcs.json           # Extension-specific WCS
-│   ├── ERR/
-│   │   └── data/
-│   ├── DQ/
-│   │   └── data/
-│   └── VARIANCE/
-│       └── data/
-├── tables/
-│   └── CATALOG/               # Table data (one array per column)
-│       ├── RA/
-│       ├── DEC/
-│       └── MAG/
-└── wcs.json
++-- nova_metadata.json
++-- extensions.json            # Extension index
++-- data/
+|   +-- science/               # Primary science data
++-- extensions/
+|   +-- SCI/
+|   |   +-- data/              # Image data
+|   |   +-- wcs.json           # Extension-specific WCS
+|   +-- ERR/
+|   |   +-- data/
+|   +-- DQ/
+|   |   +-- data/
+|   +-- VARIANCE/
+|       +-- data/
++-- tables/
+|   +-- CATALOG/               # Table data (one array per column)
+|       +-- RA/
+|       +-- DEC/
+|       +-- MAG/
++-- wcs.json
 ```
 
 #### 5.5.1 Extension Index
@@ -325,21 +325,21 @@ Tables MUST be described in `tables.json` at the store root:
 #### 5.6.3 Column Metadata
 
 Each column SHOULD include:
-- `nova:unit` — Physical unit (IVOA VOUnits syntax)
-- `nova:ucd` — IVOA Unified Content Descriptor
-- `nova:description` — Human-readable column description
+- `nova:unit` -- Physical unit (IVOA VOUnits syntax)
+- `nova:ucd` -- IVOA Unified Content Descriptor
+- `nova:description` -- Human-readable column description
 
 ### 5.7 Scaled Integers (BSCALE/BZERO)
 
 When converting from FITS, implementations MUST handle BSCALE/BZERO:
 
-- `BSCALE=1, BZERO=32768` → convert int16 to uint16
-- `BSCALE=1, BZERO=2147483648` → convert int32 to uint32
-- Other values → apply `physical = BSCALE * pixel + BZERO`
+- `BSCALE=1, BZERO=32768` -> convert int16 to uint16
+- `BSCALE=1, BZERO=2147483648` -> convert int32 to uint32
+- Other values -> apply `physical = BSCALE * pixel + BZERO`
 
 ---
 
-## 6. Layer 4 — Integrity
+## 6. Layer 4 -- Integrity
 
 ### 6.1 Chunk Hashes
 
@@ -363,7 +363,7 @@ A future revision of this specification will define:
 
 ---
 
-## 7. Layer 4 — Metadata
+## 7. Layer 4 -- Metadata
 
 ### 7.1 Root Metadata
 
@@ -407,7 +407,7 @@ reference the NOVA vocabulary. NOVA uses JSON-LD to:
 
 ---
 
-## 8. Layer 5 — World Coordinate System (WCS)
+## 8. Layer 5 -- World Coordinate System (WCS)
 
 ### 8.1 Overview
 
@@ -498,7 +498,7 @@ NOVA supports these transform types:
 
 ### 8.6 FITS WCS Compatibility
 
-The FITS converter (§10) MUST map all standard FITS WCS keywords to the
+The FITS converter (section 10) MUST map all standard FITS WCS keywords to the
 NOVA WCS schema. The mapping is bidirectional:
 
 | FITS Keyword | NOVA Path |
@@ -516,7 +516,7 @@ NOVA WCS schema. The mapping is bidirectional:
 
 ---
 
-## 9. Layer 5 — Provenance
+## 9. Layer 5 -- Provenance
 
 ### 9.1 W3C PROV-DM
 
@@ -573,10 +573,10 @@ See `schemas/provenance.schema.json` for the normative schema.
 
 ### 10.1 FITS to NOVA Conversion
 
-A conforming NOVA implementation MUST provide a FITS→NOVA converter that:
+A conforming NOVA implementation MUST provide a FITS->NOVA converter that:
 
 1. Preserves all header keywords as JSON-LD metadata
-2. Converts WCS keywords to the structured WCS schema (§8)
+2. Converts WCS keywords to the structured WCS schema (section 8)
 3. Converts BITPIX-encoded data to the appropriate Zarr dtype
 4. Preserves FITS extensions as separate Zarr groups
 5. Generates SHA-256 hashes for all data chunks
@@ -584,7 +584,7 @@ A conforming NOVA implementation MUST provide a FITS→NOVA converter that:
 
 ### 10.2 NOVA to FITS Conversion
 
-A conforming NOVA implementation MUST provide a NOVA→FITS converter that:
+A conforming NOVA implementation MUST provide a NOVA->FITS converter that:
 
 1. Maps all NOVA metadata back to FITS header keywords
 2. Converts the WCS JSON-LD to standard FITS WCS keywords
@@ -602,6 +602,122 @@ A conforming NOVA implementation MUST provide a NOVA→FITS converter that:
 | 64 | int64 |
 | -32 | float32 |
 | -64 | float64 |
+
+---
+
+## 11. Remote Access (v0.3)
+
+### 11.1 Remote Store Protocol
+
+A conforming NOVA implementation SHOULD support opening stores from remote URLs.
+The following protocols are RECOMMENDED:
+
+| Protocol | URI Scheme | Backend |
+|----------|-----------|---------|
+| HTTP/HTTPS | `http://`, `https://` | fsspec HTTPFileSystem |
+| Amazon S3 | `s3://` | s3fs via fsspec |
+| Google Cloud Storage | `gs://` | gcsfs via fsspec |
+| Azure Blob Storage | `az://`, `abfs://` | adlfs via fsspec |
+
+### 11.2 Lazy Chunk Loading
+
+Remote stores MUST support lazy chunk loading.  When a user accesses a
+slice of a remote array (e.g. `ds.data[1000:1100, 2000:2100]`), only the
+chunks that overlap with the requested region SHALL be fetched from the
+remote server.  This is possible because:
+
+1. The Zarr v3 chunk layout maps array indices to chunk file paths
+2. The chunk index (`nova_index.json`) provides chunk offsets and sizes
+3. HTTP Range requests or equivalent protocol features fetch individual chunks
+
+### 11.3 Authentication
+
+Remote stores SHOULD support authenticated access via `storage_options`
+parameters forwarded to the filesystem constructor.  Supported mechanisms
+include:
+
+- AWS IAM credentials (key, secret, session token)
+- OAuth2 bearer tokens
+- Google service account JSON keys
+- Azure shared access signatures (SAS)
+
+---
+
+## 12. Batch Migration (v0.3)
+
+### 12.1 Migration Tool Requirements
+
+A conforming NOVA implementation SHOULD provide a batch migration tool that:
+
+1. Recursively discovers FITS files in a source directory
+2. Converts each FITS file to a NOVA store in the destination directory
+3. Preserves the directory structure
+4. Supports parallel conversion (multiple worker processes)
+5. Supports dry-run mode (analysis without writing)
+6. Supports incremental mode (skip already converted files)
+7. Optionally verifies round-trip fidelity by comparing array data
+
+### 12.2 Migration Report
+
+After conversion, the tool MUST produce a report containing:
+
+- Total files found, converted, skipped, and failed
+- Per-file size before and after conversion
+- Elapsed time
+- Verification status (if requested)
+
+---
+
+## 13. Streaming I/O (v0.3)
+
+### 13.1 Append-Mode Writes
+
+A conforming NOVA implementation SHOULD support appending data frames to an
+existing array along a specified axis.  This enables time-series use cases
+where data arrives incrementally.
+
+The implementation MUST:
+
+1. Resize the existing Zarr array to accommodate new frames
+2. Write new data into the extended region
+3. Update metadata (`nova:total_frames`, timestamps) on close
+4. Support buffered writes to reduce disk I/O overhead
+
+### 13.2 StreamWriter Interface
+
+The recommended interface for streaming writes is:
+
+```python
+writer = open_appendable(store_path, frame_shape=(H, W))
+for frame in data_source:
+    writer.append(frame)
+writer.close()  # flushes buffer, writes metadata
+```
+
+---
+
+## 14. Pipeline Adapters (v0.3)
+
+### 14.1 Astropy CCDData Adapter
+
+A conforming NOVA implementation SHOULD provide bidirectional conversion
+between NOVA datasets and astropy CCDData objects:
+
+- `to_ccddata(nova_path)` -> CCDData with data, uncertainty, mask, WCS
+- `from_ccddata(ccd, nova_path)` -> NOVA store
+
+### 14.2 Astropy NDData Adapter
+
+A lightweight adapter for astropy NDData (no unit requirement):
+
+- `to_nddata(nova_path)` -> NDData with data, uncertainty, mask
+
+### 14.3 HDUList Adapter
+
+Conversion to in-memory astropy HDUList for compatibility with tools that
+expect FITS HDU objects:
+
+- `nova_to_hdulist(nova_path)` -> HDUList
 
 ---
 
@@ -635,3 +751,4 @@ The NOVA JSON-LD context defines the vocabulary mappings:
 |---|---|---|
 | 0.1-draft | 2026-04-12 | Initial specification draft |
 | 0.2-draft | 2026-04-12 | Multi-extension support, table data, scaled integers, extended data types |
+| 0.3-draft | 2026-04-12 | Remote access, batch migration, streaming I/O, pipeline adapters |

@@ -6,14 +6,14 @@ and NOVA metadata inspection.  All functions produce publication-quality
 
 Functions
 ---------
-- ``display_image`` — Quick-look image display with optional WCS grid.
-- ``display_rgb`` — Compose and display a three-colour image.
-- ``display_spectrum`` — 1-D spectral plot with optional line markers.
-- ``display_histogram`` — Pixel-value histogram with statistics overlay.
-- ``display_cutout`` — Zoom into a region with coordinate annotations.
-- ``display_comparison`` — Side-by-side comparison of two images.
-- ``display_mosaic`` — Grid of multiple images.
-- ``display_provenance`` — Visual provenance chain diagram.
+- ``display_image`` -- Quick-look image display with optional WCS grid.
+- ``display_rgb`` -- Compose and display a three-colour image.
+- ``display_spectrum`` -- 1-D spectral plot with optional line markers.
+- ``display_histogram`` -- Pixel-value histogram with statistics overlay.
+- ``display_cutout`` -- Zoom into a region with coordinate annotations.
+- ``display_comparison`` -- Side-by-side comparison of two images.
+- ``display_mosaic`` -- Grid of multiple images.
+- ``display_provenance`` -- Visual provenance chain diagram.
 """
 
 from __future__ import annotations
@@ -94,9 +94,9 @@ def _percentile_interval(
     return (low, high)
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Core Display Functions
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def display_image(
     data: np.ndarray,

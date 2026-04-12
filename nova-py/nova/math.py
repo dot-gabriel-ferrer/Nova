@@ -22,9 +22,9 @@ from typing import Literal
 import numpy as np
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Statistics
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def sigma_clip(
     data: np.ndarray,
@@ -191,9 +191,9 @@ def histogram(
     return np.histogram(arr, bins=bins, range=range_)
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Convolution
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def gaussian_kernel_2d(sigma: float, size: int | None = None) -> np.ndarray:
     """Create a normalised 2-D Gaussian kernel.
@@ -308,9 +308,9 @@ def smooth_gaussian(
     return convolve_fft(data, kernel, nan_treatment=nan_treatment)
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Resampling / Rebinning
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def rebin(
     data: np.ndarray,
@@ -340,7 +340,7 @@ def rebin(
         raise ValueError("rebin requires 2-D data")
     if data.shape[0] % new_shape[0] != 0 or data.shape[1] % new_shape[1] != 0:
         raise ValueError(
-            f"Cannot rebin {data.shape} → {new_shape}: "
+            f"Cannot rebin {data.shape} -> {new_shape}: "
             f"dimensions must be integer factors"
         )
     bin_y = data.shape[0] // new_shape[0]
@@ -413,9 +413,9 @@ def resize_image(
     )
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Image Stacking
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def stack_images(
     images: list[np.ndarray],
@@ -474,9 +474,9 @@ def stack_images(
         raise ValueError(f"Unknown stacking method: {method!r}")
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Background Estimation
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def estimate_background(
     data: np.ndarray,
@@ -533,9 +533,9 @@ def estimate_background(
     return background, rms
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Source Detection Helpers
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def detect_sources(
     data: np.ndarray,
@@ -553,7 +553,7 @@ def detect_sources(
     data : ndarray
         2-D background-subtracted image.
     threshold : float, optional
-        Absolute detection threshold.  If ``None``, uses *nsigma* × RMS.
+        Absolute detection threshold.  If ``None``, uses *nsigma* x RMS.
     nsigma : float
         Detection threshold in units of the global RMS (used if *threshold*
         is ``None``).
@@ -678,9 +678,9 @@ def aperture_photometry(
     }
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Spectral Helpers
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def continuum_normalize(
     wavelength: np.ndarray,
@@ -776,9 +776,9 @@ def equivalent_width(
     return float(np.sum(0.5 * (integrand[:-1] + integrand[1:]) * np.diff(w)))
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Pixel-level Operations
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def cosmic_ray_clean(
     data: np.ndarray,

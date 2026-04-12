@@ -1,4 +1,4 @@
-"""Tests for nova.visualization — astronomical display functions."""
+"""Tests for nova.visualization -- astronomical display functions."""
 
 import tempfile
 from pathlib import Path
@@ -139,8 +139,8 @@ class TestDisplaySpectrum:
         wavelength = np.linspace(4000, 7000, 500)
         flux = np.ones_like(wavelength)
         markers = [
-            {"wavelength": 4861, "name": "Hβ"},
-            {"wavelength": 6563, "name": "Hα"},
+            {"wavelength": 4861, "name": "Hbeta"},
+            {"wavelength": 6563, "name": "Halpha"},
         ]
         fig = display_spectrum(wavelength, flux, line_markers=markers)
         assert fig is not None

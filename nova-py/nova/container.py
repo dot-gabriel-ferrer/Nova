@@ -40,7 +40,7 @@ NOVA_CONTEXT = "https://nova-astro.org/v0.1/context.jsonld"
 # Supported compression codecs
 SUPPORTED_CODECS = {"zstd", "none"}
 
-# All data types supported by NOVA (§4.3 of the specification)
+# All data types supported by NOVA (section 4.3 of the specification)
 SUPPORTED_DTYPES = {
     "int8", "int16", "int32", "int64",
     "uint8", "uint16", "uint32",
@@ -60,7 +60,7 @@ class NovaTable:
     name : str
         Table name / group path inside the store.
     columns : dict[str, np.ndarray]
-        Column name → 1-D array mapping.
+        Column name -> 1-D array mapping.
     column_meta : dict[str, dict] | None
         Per-column metadata (units, UCDs, descriptions).
     """
@@ -371,7 +371,7 @@ class NovaDataset:
         except KeyError:
             return None
 
-    # ── Multi-extension support ──────────────────────────────────────
+    # -- Multi-extension support --------------------------------------
 
     @property
     def extensions(self) -> list[NovaExtension]:
@@ -391,7 +391,7 @@ class NovaDataset:
                 return ext
         return None
 
-    # ── Table support ────────────────────────────────────────────────
+    # -- Table support ------------------------------------------------
 
     @property
     def tables(self) -> dict[str, NovaTable]:
@@ -597,7 +597,7 @@ class NovaDataset:
         if self._tables:
             self._save_tables()
 
-        # Write chunk index (expensive — reads all chunks + SHA-256)
+        # Write chunk index (expensive -- reads all chunks + SHA-256)
         if build_index:
             index = self._build_chunk_index()
             index_path = self.store_path / "nova_index.json"

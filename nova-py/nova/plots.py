@@ -110,7 +110,7 @@ def generate_performance_plots(
     generated_files: list[str] = []
 
     # Collect multi-format benchmark data across sizes
-    size_labels = [f"{s[0]}×{s[1]}" for s in sizes]
+    size_labels = [f"{s[0]}x{s[1]}" for s in sizes]
 
     # Per-format, per-operation lists of times (ms) and file sizes (MB)
     format_order = ["NOVA", "FITS", "HDF5", "NumPy", "NOVA (Zarr)"]
@@ -161,7 +161,7 @@ def generate_performance_plots(
     n_fmt = len(active_formats)
     bar_width = 0.7 / n_fmt
 
-    # ── Plot 1: Combined Performance Overview ──
+    # -- Plot 1: Combined Performance Overview --
     fig, axes = plt.subplots(2, 2, figsize=(16, 11))
     fig.patch.set_facecolor(BG_COLOR)
     for ax in axes.flat:
@@ -198,7 +198,7 @@ def generate_performance_plots(
                   "Read Throughput (higher = better)")
 
     fig.suptitle(
-        "NOVA vs FITS vs HDF5 vs NumPy — Performance Comparison",
+        "NOVA vs FITS vs HDF5 vs NumPy -- Performance Comparison",
         color=TEXT_COLOR, fontsize=16, fontweight="bold", y=0.98,
     )
     fig.tight_layout(rect=[0, 0, 1, 0.95])
@@ -208,7 +208,7 @@ def generate_performance_plots(
     plt.close(fig)
     generated_files.append(str(path))
 
-    # ── Plot 2: Partial Read / Cloud Access ──
+    # -- Plot 2: Partial Read / Cloud Access --
     fig, (ax_time, ax_speedup) = plt.subplots(1, 2, figsize=(14, 5))
     fig.patch.set_facecolor(BG_COLOR)
     _style_ax(ax_time)
@@ -227,7 +227,7 @@ def generate_performance_plots(
             )
     ax_time.set_xlabel("Image Size")
     ax_time.set_ylabel("Time (ms)")
-    ax_time.set_title("Partial Read — Cloud Access Pattern")
+    ax_time.set_title("Partial Read -- Cloud Access Pattern")
     ax_time.set_xticks(x)
     ax_time.set_xticklabels(size_labels)
     ax_time.legend(facecolor=BG_COLOR, edgecolor=GRID_COLOR,
@@ -273,7 +273,7 @@ def generate_performance_plots(
     plt.close(fig)
     generated_files.append(str(path))
 
-    # ── Plot 3: Compression Comparison ──
+    # -- Plot 3: Compression Comparison --
     fig, ax = plt.subplots(figsize=(10, 5))
     fig.patch.set_facecolor(BG_COLOR)
     _style_ax(ax)
@@ -327,7 +327,7 @@ def generate_performance_plots(
     plt.close(fig)
     generated_files.append(str(path))
 
-    # ── Plot 4: Improvement Summary (horizontal bars) ──
+    # -- Plot 4: Improvement Summary (horizontal bars) --
     fig, ax = plt.subplots(figsize=(11, 5))
     fig.patch.set_facecolor(BG_COLOR)
     _style_ax(ax)
@@ -387,7 +387,7 @@ def generate_performance_plots(
     ax.set_yticklabels(categories, color=TEXT_COLOR)
     ax.set_xlabel("Improvement Factor vs FITS (higher = better)")
     ax.set_title(
-        f"NOVA Improvement Summary — {sizes[-1][0]}×{sizes[-1][1]} Realistic Sky",
+        f"NOVA Improvement Summary -- {sizes[-1][0]}x{sizes[-1][1]} Realistic Sky",
         color=TEXT_COLOR, fontsize=14, fontweight="bold",
     )
     ax.legend(facecolor=BG_COLOR, edgecolor=GRID_COLOR,
@@ -400,7 +400,7 @@ def generate_performance_plots(
     plt.close(fig)
     generated_files.append(str(path))
 
-    # ── Plot 5: File Size Comparison ──
+    # -- Plot 5: File Size Comparison --
     fig, ax = plt.subplots(figsize=(10, 5))
     fig.patch.set_facecolor(BG_COLOR)
     _style_ax(ax)

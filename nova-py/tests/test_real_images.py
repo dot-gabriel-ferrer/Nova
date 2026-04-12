@@ -40,9 +40,9 @@ from nova.math import (
 from nova.ml import to_tensor, compute_normalization, normalize, denormalize
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Fixtures: generate realistic astronomical FITS test data
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 def _make_realistic_fits(path: Path, shape: tuple[int, int] = (512, 512),
                          add_wcs: bool = True, n_sources: int = 50,
@@ -139,12 +139,12 @@ def _make_spectral_fits(path: Path, n_pixels: int = 2048,
     lines = [
         (3934, 30, 0.7),   # Ca II K
         (3968, 25, 0.6),   # Ca II H
-        (4101, 20, 0.5),   # Hδ
-        (4340, 25, 0.6),   # Hγ
-        (4861, 35, 0.7),   # Hβ
+        (4101, 20, 0.5),   # Hdelta
+        (4340, 25, 0.6),   # Hgamma
+        (4861, 35, 0.7),   # Hbeta
         (5183, 15, 0.3),   # Mg I b
         (5890, 30, 0.8),   # Na D
-        (6563, 40, 0.8),   # Hα
+        (6563, 40, 0.8),   # Halpha
     ]
     for wl, width, depth in lines:
         flux *= 1 - depth * np.exp(-0.5 * ((wavelength - wl) / width * 5)**2)
@@ -210,12 +210,12 @@ def _make_multichannel_fits(path: Path, shape: tuple[int, int] = (256, 256),
     return path
 
 
-# ──────────────────────────────────────────────────────────────────────────
-#  Test: Full FITS → NOVA pipeline with realistic images
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
+#  Test: Full FITS -> NOVA pipeline with realistic images
+# --------------------------------------------------------------------------
 
 class TestRealImageConversion:
-    """Test FITS→NOVA conversion with realistic astronomical data."""
+    """Test FITS->NOVA conversion with realistic astronomical data."""
 
     def test_realistic_ccd_conversion(self):
         """Convert a realistic CCD image with proper WCS."""
@@ -241,7 +241,7 @@ class TestRealImageConversion:
             assert len(ds.metadata) > 0
 
     def test_realistic_round_trip(self):
-        """Test FITS → NOVA → FITS round-trip preserves data."""
+        """Test FITS -> NOVA -> FITS round-trip preserves data."""
         with tempfile.TemporaryDirectory() as tmpdir:
             fits_in = _make_realistic_fits(Path(tmpdir) / "input.fits")
             nova_path = Path(tmpdir) / "intermediate.nova.zarr"
@@ -260,7 +260,7 @@ class TestRealImageConversion:
             )
 
     def test_wcs_round_trip_fidelity(self):
-        """Verify WCS coordinates survive FITS→NOVA→FITS conversion."""
+        """Verify WCS coordinates survive FITS->NOVA->FITS conversion."""
         with tempfile.TemporaryDirectory() as tmpdir:
             fits_in = _make_realistic_fits(Path(tmpdir) / "wcs_test.fits")
             nova_path = Path(tmpdir) / "wcs_test.nova.zarr"
@@ -290,9 +290,9 @@ class TestRealImageConversion:
             assert total_errors == 0, f"Validation errors: {errors}"
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Test: Math operations on real astronomical data
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 class TestRealImageMath:
     """Test mathematical operations on realistic astronomical images."""
@@ -415,9 +415,9 @@ class TestRealImageMath:
             assert stacked_std < single_std
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Test: ML pipeline with real data
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 class TestRealImageML:
     """Test ML tensor export with realistic astronomical data."""
@@ -455,9 +455,9 @@ class TestRealImageML:
                 npt.assert_allclose(recovered, data, rtol=1e-5)
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Test: Spectral data pipeline
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 class TestRealSpectralData:
     """Test NOVA with realistic spectral data."""
@@ -475,7 +475,7 @@ class TestRealSpectralData:
             assert data.shape[0] == 2048
 
     def test_spectral_round_trip(self):
-        """FITS→NOVA→FITS round-trip for spectral data."""
+        """FITS->NOVA->FITS round-trip for spectral data."""
         with tempfile.TemporaryDirectory() as tmpdir:
             fits_in = _make_spectral_fits(Path(tmpdir) / "spec_in.fits")
             nova_path = Path(tmpdir) / "spec.nova.zarr"
@@ -493,9 +493,9 @@ class TestRealSpectralData:
             )
 
 
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 #  Test: Large image handling
-# ──────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 
 class TestLargeImages:
     """Test NOVA handles large images correctly (chunking, compression)."""
