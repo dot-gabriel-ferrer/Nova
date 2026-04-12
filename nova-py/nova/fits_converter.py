@@ -29,6 +29,7 @@ from nova.container import (
     NOVA_VERSION,
 )
 from nova.integrity import compute_sha256
+from nova.provenance import ProvenanceBundle
 
 
 # FITS BITPIX to numpy dtype mapping

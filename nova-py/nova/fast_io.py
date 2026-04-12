@@ -49,7 +49,7 @@ def fast_write(
     data : numpy.ndarray
         Array to write.  Must be C-contiguous; will be made contiguous if not.
     compression_level : int
-        Zstd compression level (0 = no compression, 1?22 = zstd levels).
+        Zstd compression level (0 = no compression, 1-22 = zstd levels).
         Level 1 gives the best speed/ratio tradeoff.
     threads : int
         Number of zstd compression threads (-1 = all cores).
