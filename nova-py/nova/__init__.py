@@ -11,6 +11,7 @@ from nova.wcs import NovaWCS
 from nova.fits_converter import from_fits, to_fits
 from nova.provenance import ProvenanceBundle
 from nova.integrity import compute_sha256, verify_chunk
+from nova.benchmarks import run_full_comparison, generate_test_data
 
 __all__ = [
     "NovaDataset",
@@ -22,4 +23,6 @@ __all__ = [
     "ProvenanceBundle",
     "compute_sha256",
     "verify_chunk",
+    "run_full_comparison",
+    "generate_test_data",
 ]

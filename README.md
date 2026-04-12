@@ -74,10 +74,21 @@ Nova/
 │   │   ├── wcs.py              # WCS JSON-LD handling
 │   │   ├── fits_converter.py   # FITS↔NOVA converter
 │   │   ├── provenance.py       # W3C PROV-DM support
-│   │   └── integrity.py        # SHA-256 chunk integrity
+│   │   ├── integrity.py        # SHA-256 chunk integrity
+│   │   └── benchmarks.py       # Performance benchmarking
 │   ├── tests/
+│   ├── tutorials/               # Step-by-step tutorials
+│   │   ├── 01_quickstart.py
+│   │   ├── 02_fits_conversion.py
+│   │   ├── 03_cloud_access.py
+│   │   ├── 04_provenance.py
+│   │   └── 05_performance.py
 │   └── examples/
 │       └── fits_to_nova.py     # Example conversion script
+├── notebooks/                   # Jupyter notebooks
+│   ├── 01_NOVA_Quickstart.ipynb
+│   ├── 02_FITS_to_NOVA_Migration.ipynb
+│   └── 03_Performance_Benchmarks.ipynb
 └── README.md
 ```
 
@@ -98,6 +109,38 @@ print(ds.data[:100,:100])  # Lazy chunk-based access
 # Cloud access (2 requests max)
 ds = nova.open("https://archive.example.org/obs/12345.nova.zarr")
 cutout = ds.data[1000:1100, 2000:2100]  # Only fetches needed chunks
+```
+
+## Tutorials
+
+Step-by-step Python tutorials (runnable scripts):
+
+| # | Tutorial | Description |
+|---|---|---|
+| 01 | [Quickstart](nova-py/tutorials/01_quickstart.py) | Create your first NOVA dataset from scratch |
+| 02 | [FITS Conversion](nova-py/tutorials/02_fits_conversion.py) | FITS↔NOVA migration with round-trip verification |
+| 03 | [Cloud Access](nova-py/tutorials/03_cloud_access.py) | Cloud-native chunk-based data retrieval |
+| 04 | [Provenance](nova-py/tutorials/04_provenance.py) | W3C PROV-DM data lineage tracking |
+| 05 | [Performance](nova-py/tutorials/05_performance.py) | NOVA vs FITS performance benchmarks |
+
+```bash
+cd nova-py
+python tutorials/01_quickstart.py
+```
+
+## Jupyter Notebooks
+
+Interactive notebooks with visualizations and charts:
+
+| # | Notebook | Description |
+|---|---|---|
+| 01 | [NOVA Quickstart](notebooks/01_NOVA_Quickstart.ipynb) | Interactive tutorial with data visualization |
+| 02 | [FITS Migration](notebooks/02_FITS_to_NOVA_Migration.ipynb) | Complete migration guide with metadata inspection |
+| 03 | [Performance Benchmarks](notebooks/03_Performance_Benchmarks.ipynb) | Interactive benchmarks with charts |
+
+```bash
+pip install -e "nova-py[notebooks]"
+jupyter notebook notebooks/
 ```
 
 ## Specification
