@@ -1,9 +1,9 @@
 """NOVA performance plot generator.
 
-Generates performance comparison plots (PNG) for README documentation,
-showing NOVA's advantages over FITS in:
-- Write speed
-- Read speed  
+Generates multi-format performance comparison plots (PNG) showing NOVA's
+advantages over FITS, HDF5, and raw NumPy in:
+- Write speed / throughput
+- Read speed / throughput
 - Partial/cloud read speed
 - Compression ratio
 - File size
@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 
 from nova.benchmarks import (
-    run_full_comparison,
+    run_multi_format_comparison,
     generate_test_data,
     benchmark_nova_write,
     benchmark_nova_read,
@@ -25,8 +25,48 @@ from nova.benchmarks import (
     benchmark_fits_write,
     benchmark_fits_read,
     benchmark_fits_partial_read,
+    benchmark_hdf5_write,
+    benchmark_hdf5_read,
+    benchmark_numpy_write,
+    benchmark_numpy_read,
 )
 
+
+# ---------------------------------------------------------------------------
+#  Styling helpers
+# ---------------------------------------------------------------------------
+
+# Color palette for each format
+FORMAT_COLORS: dict[str, str] = {
+    "NOVA": "#2196F3",
+    "NOVA (Zarr)": "#64B5F6",
+    "FITS": "#FF5722",
+    "HDF5": "#9C27B0",
+    "NumPy": "#4CAF50",
+}
+
+BG_COLOR = "#0d1117"
+TEXT_COLOR = "#c9d1d9"
+GRID_COLOR = "#30363d"
+ACCENT_GREEN = "#4CAF50"
+
+
+def _style_ax(ax: object) -> None:  # type: ignore[override]
+    """Apply dark theme to a matplotlib axis."""
+    ax.set_facecolor(BG_COLOR)  # type: ignore[attr-defined]
+    ax.tick_params(colors=TEXT_COLOR)  # type: ignore[attr-defined]
+    for spine in ("bottom", "left"):
+        ax.spines[spine].set_color(GRID_COLOR)  # type: ignore[attr-defined]
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)  # type: ignore[attr-defined]
+    ax.xaxis.label.set_color(TEXT_COLOR)  # type: ignore[attr-defined]
+    ax.yaxis.label.set_color(TEXT_COLOR)  # type: ignore[attr-defined]
+    ax.title.set_color(TEXT_COLOR)  # type: ignore[attr-defined]
+
+
+# ---------------------------------------------------------------------------
+#  Main entry point
+# ---------------------------------------------------------------------------
 
 def generate_performance_plots(
     output_dir: str | Path,
@@ -69,276 +109,270 @@ def generate_performance_plots(
 
     generated_files: list[str] = []
 
-    # Collect benchmark data across sizes
+    # Collect multi-format benchmark data across sizes
     size_labels = [f"{s[0]}×{s[1]}" for s in sizes]
-    nova_write_times: list[float] = []
-    fits_write_times: list[float] = []
-    nova_read_times: list[float] = []
-    fits_read_times: list[float] = []
-    nova_partial_times: list[float] = []
-    fits_partial_times: list[float] = []
-    nova_file_sizes: list[float] = []
-    fits_file_sizes: list[float] = []
-    compression_ratios_nova: list[float] = []
-    compression_ratios_fits: list[float] = []
+
+    # Per-format, per-operation lists of times (ms) and file sizes (MB)
+    format_order = ["NOVA", "FITS", "HDF5", "NumPy", "NOVA (Zarr)"]
+    write_times: dict[str, list[float]] = {f: [] for f in format_order}
+    read_times: dict[str, list[float]] = {f: [] for f in format_order}
+    partial_times: dict[str, list[float]] = {f: [] for f in format_order}
+    file_sizes: dict[str, list[float]] = {f: [] for f in format_order}
+    write_throughput: dict[str, list[float]] = {f: [] for f in format_order}
+    read_throughput: dict[str, list[float]] = {f: [] for f in format_order}
 
     for size in sizes:
-        results = run_full_comparison(
+        results = run_multi_format_comparison(
             shape=size,
             dtype="float64",
             pattern=patterns[0],
+            n_runs=3,
         )
 
-        # Write
-        nova_write_times.append(results[0].nova_result.elapsed_seconds * 1000)
-        fits_write_times.append(results[0].fits_result.elapsed_seconds * 1000)
+        for fmt in format_order:
+            if fmt in results:
+                wr = results[fmt].get("write")
+                rd = results[fmt].get("read")
+                pr = results[fmt].get("partial_read")
+                write_times[fmt].append(wr.elapsed_seconds * 1000 if wr else 0)
+                read_times[fmt].append(rd.elapsed_seconds * 1000 if rd else 0)
+                partial_times[fmt].append(pr.elapsed_seconds * 1000 if pr else 0)
+                file_sizes[fmt].append(
+                    wr.file_size_bytes / (1024 * 1024) if wr else 0
+                )
+                write_throughput[fmt].append(
+                    wr.throughput_mbps if wr else 0
+                )
+                read_throughput[fmt].append(
+                    rd.throughput_mbps if rd else 0
+                )
+            else:
+                write_times[fmt].append(0)
+                read_times[fmt].append(0)
+                partial_times[fmt].append(0)
+                file_sizes[fmt].append(0)
+                write_throughput[fmt].append(0)
+                read_throughput[fmt].append(0)
 
-        # Read
-        nova_read_times.append(results[1].nova_result.elapsed_seconds * 1000)
-        fits_read_times.append(results[1].fits_result.elapsed_seconds * 1000)
-
-        # Partial read
-        nova_partial_times.append(results[2].nova_result.elapsed_seconds * 1000)
-        fits_partial_times.append(results[2].fits_result.elapsed_seconds * 1000)
-
-        # File sizes (MB)
-        nova_file_sizes.append(results[0].nova_result.file_size_bytes / (1024 * 1024))
-        fits_file_sizes.append(results[0].fits_result.file_size_bytes / (1024 * 1024))
-
-        # Compression ratios
-        compression_ratios_nova.append(results[0].nova_result.compression_ratio)
-        compression_ratios_fits.append(results[0].fits_result.compression_ratio)
-
-    # Color scheme
-    nova_color = "#2196F3"
-    fits_color = "#FF5722"
-    bg_color = "#0d1117"
-    text_color = "#c9d1d9"
-    grid_color = "#30363d"
-    accent_green = "#4CAF50"
-
-    # ── Plot 1: Combined Performance Overview ──
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.patch.set_facecolor(bg_color)
-
-    for ax in axes.flat:
-        ax.set_facecolor(bg_color)
-        ax.tick_params(colors=text_color)
-        ax.spines["bottom"].set_color(grid_color)
-        ax.spines["left"].set_color(grid_color)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.xaxis.label.set_color(text_color)
-        ax.yaxis.label.set_color(text_color)
-        ax.title.set_color(text_color)
+    # Only plot formats that have data
+    active_formats = [f for f in format_order if any(write_times[f])]
 
     x = np.arange(len(size_labels))
-    bar_width = 0.35
+    n_fmt = len(active_formats)
+    bar_width = 0.7 / n_fmt
 
-    # Write Speed
-    ax1 = axes[0, 0]
-    bars1 = ax1.bar(x - bar_width / 2, nova_write_times, bar_width,
-                    label="NOVA", color=nova_color, alpha=0.9)
-    bars2 = ax1.bar(x + bar_width / 2, fits_write_times, bar_width,
-                    label="FITS", color=fits_color, alpha=0.9)
-    ax1.set_xlabel("Image Size")
-    ax1.set_ylabel("Time (ms)")
-    ax1.set_title("Write Speed")
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(size_labels)
-    ax1.legend(facecolor=bg_color, edgecolor=grid_color, labelcolor=text_color)
-    ax1.grid(axis="y", color=grid_color, alpha=0.3)
+    # ── Plot 1: Combined Performance Overview ──
+    fig, axes = plt.subplots(2, 2, figsize=(16, 11))
+    fig.patch.set_facecolor(BG_COLOR)
+    for ax in axes.flat:
+        _style_ax(ax)
 
-    # Read Speed
-    ax2 = axes[0, 1]
-    ax2.bar(x - bar_width / 2, nova_read_times, bar_width,
-            label="NOVA", color=nova_color, alpha=0.9)
-    ax2.bar(x + bar_width / 2, fits_read_times, bar_width,
-            label="FITS", color=fits_color, alpha=0.9)
-    ax2.set_xlabel("Image Size")
-    ax2.set_ylabel("Time (ms)")
-    ax2.set_title("Read Speed")
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(size_labels)
-    ax2.legend(facecolor=bg_color, edgecolor=grid_color, labelcolor=text_color)
-    ax2.grid(axis="y", color=grid_color, alpha=0.3)
+    def _grouped_bars(ax: object, data_dict: dict[str, list[float]],
+                      ylabel: str, title: str) -> None:
+        for i, fmt in enumerate(active_formats):
+            vals = data_dict[fmt]
+            if any(vals):
+                ax.bar(  # type: ignore[attr-defined]
+                    x + (i - n_fmt / 2 + 0.5) * bar_width,
+                    vals, bar_width,
+                    label=fmt,
+                    color=FORMAT_COLORS.get(fmt, "#888"),
+                    alpha=0.9,
+                )
+        ax.set_xlabel("Image Size")  # type: ignore[attr-defined]
+        ax.set_ylabel(ylabel)  # type: ignore[attr-defined]
+        ax.set_title(title)  # type: ignore[attr-defined]
+        ax.set_xticks(x)  # type: ignore[attr-defined]
+        ax.set_xticklabels(size_labels)  # type: ignore[attr-defined]
+        ax.legend(  # type: ignore[attr-defined]
+            facecolor=BG_COLOR, edgecolor=GRID_COLOR,
+            labelcolor=TEXT_COLOR, fontsize=8,
+        )
+        ax.grid(axis="y", color=GRID_COLOR, alpha=0.3)  # type: ignore[attr-defined]
 
-    # Partial Read (Cloud Access)
-    ax3 = axes[1, 0]
-    ax3.bar(x - bar_width / 2, nova_partial_times, bar_width,
-            label="NOVA (chunk)", color=nova_color, alpha=0.9)
-    ax3.bar(x + bar_width / 2, fits_partial_times, bar_width,
-            label="FITS (full file)", color=fits_color, alpha=0.9)
-    ax3.set_xlabel("Image Size")
-    ax3.set_ylabel("Time (ms)")
-    ax3.set_title("Partial Read — Cloud Access Pattern")
-    ax3.set_xticks(x)
-    ax3.set_xticklabels(size_labels)
-    ax3.legend(facecolor=bg_color, edgecolor=grid_color, labelcolor=text_color)
-    ax3.grid(axis="y", color=grid_color, alpha=0.3)
-
-    # File Size
-    ax4 = axes[1, 1]
-    ax4.bar(x - bar_width / 2, nova_file_sizes, bar_width,
-            label="NOVA (ZSTD)", color=nova_color, alpha=0.9)
-    ax4.bar(x + bar_width / 2, fits_file_sizes, bar_width,
-            label="FITS (uncompressed)", color=fits_color, alpha=0.9)
-    ax4.set_xlabel("Image Size")
-    ax4.set_ylabel("File Size (MB)")
-    ax4.set_title("Storage Efficiency")
-    ax4.set_xticks(x)
-    ax4.set_xticklabels(size_labels)
-    ax4.legend(facecolor=bg_color, edgecolor=grid_color, labelcolor=text_color)
-    ax4.grid(axis="y", color=grid_color, alpha=0.3)
+    _grouped_bars(axes[0, 0], write_times, "Time (ms)", "Write Speed (lower = better)")
+    _grouped_bars(axes[0, 1], read_times, "Time (ms)", "Read Speed (lower = better)")
+    _grouped_bars(axes[1, 0], write_throughput, "Throughput (MB/s)",
+                  "Write Throughput (higher = better)")
+    _grouped_bars(axes[1, 1], read_throughput, "Throughput (MB/s)",
+                  "Read Throughput (higher = better)")
 
     fig.suptitle(
-        "NOVA vs FITS — Performance Comparison",
-        color=text_color, fontsize=16, fontweight="bold", y=0.98,
+        "NOVA vs FITS vs HDF5 vs NumPy — Performance Comparison",
+        color=TEXT_COLOR, fontsize=16, fontweight="bold", y=0.98,
     )
     fig.tight_layout(rect=[0, 0, 1, 0.95])
 
     path = output_dir / "benchmark_overview.png"
-    fig.savefig(path, dpi=150, facecolor=bg_color, bbox_inches="tight")
+    fig.savefig(path, dpi=150, facecolor=BG_COLOR, bbox_inches="tight")
     plt.close(fig)
     generated_files.append(str(path))
 
-    # ── Plot 2: Cloud Access Advantage ──
-    fig, ax = plt.subplots(figsize=(10, 5))
-    fig.patch.set_facecolor(bg_color)
-    ax.set_facecolor(bg_color)
-    ax.tick_params(colors=text_color)
-    ax.spines["bottom"].set_color(grid_color)
-    ax.spines["left"].set_color(grid_color)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.xaxis.label.set_color(text_color)
-    ax.yaxis.label.set_color(text_color)
-    ax.title.set_color(text_color)
+    # ── Plot 2: Partial Read / Cloud Access ──
+    fig, (ax_time, ax_speedup) = plt.subplots(1, 2, figsize=(14, 5))
+    fig.patch.set_facecolor(BG_COLOR)
+    _style_ax(ax_time)
+    _style_ax(ax_speedup)
 
-    # Show speedup factor for partial reads
-    speedups = []
-    for ft, nt in zip(fits_partial_times, nova_partial_times):
-        speedups.append(ft / nt if nt > 0 else 1.0)
+    partial_formats = [f for f in active_formats if any(partial_times[f])]
+    for i, fmt in enumerate(partial_formats):
+        vals = partial_times[fmt]
+        if any(vals):
+            ax_time.bar(
+                x + (i - len(partial_formats) / 2 + 0.5) * bar_width,
+                vals, bar_width,
+                label=fmt,
+                color=FORMAT_COLORS.get(fmt, "#888"),
+                alpha=0.9,
+            )
+    ax_time.set_xlabel("Image Size")
+    ax_time.set_ylabel("Time (ms)")
+    ax_time.set_title("Partial Read — Cloud Access Pattern")
+    ax_time.set_xticks(x)
+    ax_time.set_xticklabels(size_labels)
+    ax_time.legend(facecolor=BG_COLOR, edgecolor=GRID_COLOR,
+                   labelcolor=TEXT_COLOR, fontsize=8)
+    ax_time.grid(axis="y", color=GRID_COLOR, alpha=0.3)
 
-    bars = ax.bar(x, speedups, 0.5, color=accent_green, alpha=0.9)
-    ax.axhline(y=1.0, color=fits_color, linestyle="--", alpha=0.5, label="FITS baseline (1x)")
-
-    for bar, speedup in zip(bars, speedups):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.05,
-            f"{speedup:.1f}x",
-            ha="center", va="bottom",
-            color=text_color, fontweight="bold", fontsize=12,
-        )
-
-    ax.set_xlabel("Image Size")
-    ax.set_ylabel("NOVA Speedup Factor")
-    ax.set_title(
-        "Cloud Access: NOVA Chunk-Based vs FITS Full-File Read",
-        color=text_color, fontsize=14, fontweight="bold",
-    )
-    ax.set_xticks(x)
-    ax.set_xticklabels(size_labels)
-    ax.legend(facecolor=bg_color, edgecolor=grid_color, labelcolor=text_color)
-    ax.grid(axis="y", color=grid_color, alpha=0.3)
+    # Speedup vs FITS
+    if "FITS" in partial_times and any(partial_times["FITS"]):
+        speedup_formats = [f for f in partial_formats if f != "FITS"]
+        for i, fmt in enumerate(speedup_formats):
+            speedups = []
+            for ft, nt in zip(partial_times["FITS"], partial_times[fmt]):
+                speedups.append(ft / nt if nt > 0 else 1.0)
+            bars = ax_speedup.bar(
+                x + (i - len(speedup_formats) / 2 + 0.5) * bar_width,
+                speedups, bar_width,
+                label=fmt,
+                color=FORMAT_COLORS.get(fmt, "#888"),
+                alpha=0.9,
+            )
+            for bar, sp in zip(bars, speedups):
+                ax_speedup.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + 0.02,
+                    f"{sp:.1f}x",
+                    ha="center", va="bottom",
+                    color=TEXT_COLOR, fontweight="bold", fontsize=9,
+                )
+        ax_speedup.axhline(y=1.0, color=FORMAT_COLORS["FITS"],
+                           linestyle="--", alpha=0.5, label="FITS baseline")
+    ax_speedup.set_xlabel("Image Size")
+    ax_speedup.set_ylabel("Speedup vs FITS")
+    ax_speedup.set_title("Partial Read Speedup vs FITS")
+    ax_speedup.set_xticks(x)
+    ax_speedup.set_xticklabels(size_labels)
+    ax_speedup.legend(facecolor=BG_COLOR, edgecolor=GRID_COLOR,
+                      labelcolor=TEXT_COLOR, fontsize=8)
+    ax_speedup.grid(axis="y", color=GRID_COLOR, alpha=0.3)
 
     fig.tight_layout()
     path = output_dir / "cloud_access_speedup.png"
-    fig.savefig(path, dpi=150, facecolor=bg_color, bbox_inches="tight")
+    fig.savefig(path, dpi=150, facecolor=BG_COLOR, bbox_inches="tight")
     plt.close(fig)
     generated_files.append(str(path))
 
     # ── Plot 3: Compression Comparison ──
     fig, ax = plt.subplots(figsize=(10, 5))
-    fig.patch.set_facecolor(bg_color)
-    ax.set_facecolor(bg_color)
-    ax.tick_params(colors=text_color)
-    ax.spines["bottom"].set_color(grid_color)
-    ax.spines["left"].set_color(grid_color)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.xaxis.label.set_color(text_color)
-    ax.yaxis.label.set_color(text_color)
-    ax.title.set_color(text_color)
+    fig.patch.set_facecolor(BG_COLOR)
+    _style_ax(ax)
 
-    # Compression ratios for different data patterns
     pattern_names = ["Realistic Sky", "Gradient", "Sparse", "Gaussian Noise"]
     pattern_keys = ["realistic_sky", "gradient", "sparse", "gaussian_noise"]
-    nova_ratios = []
-    fits_ratios = []
 
+    # Collect compression ratios per format per pattern
+    comp_ratios: dict[str, list[float]] = {f: [] for f in ["NOVA", "FITS", "HDF5"]}
     test_size = (512, 512)
+
     for pattern in pattern_keys:
         data = generate_test_data(shape=test_size, pattern=pattern)
         with tempfile.TemporaryDirectory() as tmpdir:
             nw = benchmark_nova_write(data, output_dir=tmpdir)
             fw = benchmark_fits_write(data, output_dir=tmpdir)
-            nova_ratios.append(nw.compression_ratio)
-            fits_ratios.append(fw.compression_ratio)
+            comp_ratios["NOVA"].append(nw.compression_ratio)
+            comp_ratios["FITS"].append(fw.compression_ratio)
+            try:
+                hw = benchmark_hdf5_write(data, output_dir=tmpdir)
+                comp_ratios["HDF5"].append(hw.compression_ratio)
+            except ImportError:
+                comp_ratios["HDF5"].append(0)
 
     x_pat = np.arange(len(pattern_names))
-    ax.bar(x_pat - bar_width / 2, nova_ratios, bar_width,
-           label="NOVA (ZSTD)", color=nova_color, alpha=0.9)
-    ax.bar(x_pat + bar_width / 2, fits_ratios, bar_width,
-           label="FITS (none)", color=fits_color, alpha=0.9)
+    comp_formats = [f for f in ["NOVA", "FITS", "HDF5"] if any(comp_ratios[f])]
+    bw = 0.7 / len(comp_formats)
+    for i, fmt in enumerate(comp_formats):
+        ax.bar(
+            x_pat + (i - len(comp_formats) / 2 + 0.5) * bw,
+            comp_ratios[fmt], bw,
+            label=fmt,
+            color=FORMAT_COLORS.get(fmt, "#888"),
+            alpha=0.9,
+        )
 
     ax.set_xlabel("Data Pattern")
     ax.set_ylabel("Compression Ratio (higher = better)")
     ax.set_title(
         "Compression Ratio by Data Type",
-        color=text_color, fontsize=14, fontweight="bold",
+        color=TEXT_COLOR, fontsize=14, fontweight="bold",
     )
     ax.set_xticks(x_pat)
     ax.set_xticklabels(pattern_names)
-    ax.legend(facecolor=bg_color, edgecolor=grid_color, labelcolor=text_color)
-    ax.grid(axis="y", color=grid_color, alpha=0.3)
+    ax.legend(facecolor=BG_COLOR, edgecolor=GRID_COLOR, labelcolor=TEXT_COLOR)
+    ax.grid(axis="y", color=GRID_COLOR, alpha=0.3)
 
     fig.tight_layout()
     path = output_dir / "compression_comparison.png"
-    fig.savefig(path, dpi=150, facecolor=bg_color, bbox_inches="tight")
+    fig.savefig(path, dpi=150, facecolor=BG_COLOR, bbox_inches="tight")
     plt.close(fig)
     generated_files.append(str(path))
 
-    # ── Plot 4: Feature comparison radar-like summary ──
-    fig, ax = plt.subplots(figsize=(10, 5))
-    fig.patch.set_facecolor(bg_color)
-    ax.set_facecolor(bg_color)
-    ax.tick_params(colors=text_color)
-    ax.spines["bottom"].set_color(grid_color)
-    ax.spines["left"].set_color(grid_color)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.xaxis.label.set_color(text_color)
-    ax.yaxis.label.set_color(text_color)
+    # ── Plot 4: Improvement Summary (horizontal bars) ──
+    fig, ax = plt.subplots(figsize=(11, 5))
+    fig.patch.set_facecolor(BG_COLOR)
+    _style_ax(ax)
 
     # Use largest size for summary
-    largest_idx = -1
+    largest = -1
     categories = [
         "Write Speed",
         "Read Speed",
         "Partial Read",
         "Compression",
-        "Cloud Access",
+        "File Size\nSavings",
         "Metadata\nValidation",
     ]
 
-    # Calculate improvement factors for the largest size
-    write_speedup = fits_write_times[largest_idx] / nova_write_times[largest_idx] if nova_write_times[largest_idx] > 0 else 1.0
-    read_speedup = fits_read_times[largest_idx] / nova_read_times[largest_idx] if nova_read_times[largest_idx] > 0 else 1.0
-    partial_speedup = fits_partial_times[largest_idx] / nova_partial_times[largest_idx] if nova_partial_times[largest_idx] > 0 else 1.0
-    compression_factor = nova_ratios[0] / fits_ratios[0] if fits_ratios[0] > 0 else 1.0  # realistic_sky
-    cloud_factor = partial_speedup  # same metric
+    fits_wt = write_times["FITS"][largest] if write_times["FITS"][largest] > 0 else 1.0
+    nova_wt = write_times["NOVA"][largest] if write_times["NOVA"][largest] > 0 else 1.0
+    fits_rt = read_times["FITS"][largest] if read_times["FITS"][largest] > 0 else 1.0
+    nova_rt = read_times["NOVA"][largest] if read_times["NOVA"][largest] > 0 else 1.0
+    fits_pt = partial_times["FITS"][largest] if partial_times["FITS"][largest] > 0 else 1.0
+    nova_pt = partial_times["NOVA"][largest] if partial_times["NOVA"][largest] > 0 else 1.0
+
+    write_speedup = fits_wt / nova_wt
+    read_speedup = fits_rt / nova_rt
+    partial_speedup = fits_pt / nova_pt
+    nova_cr = comp_ratios["NOVA"][0] if comp_ratios["NOVA"] else 1.0
+    fits_cr = comp_ratios["FITS"][0] if comp_ratios["FITS"] else 1.0
+    compression_factor = nova_cr / fits_cr if fits_cr > 0 else 1.0
+
+    fits_fs = file_sizes["FITS"][largest] if file_sizes["FITS"][largest] > 0 else 1.0
+    nova_fs = file_sizes["NOVA"][largest] if file_sizes["NOVA"][largest] > 0 else 1.0
+    size_factor = fits_fs / nova_fs if nova_fs > 0 else 1.0
+
     metadata_factor = 5.0  # NOVA has schema validation, FITS does not (qualitative)
 
     improvements = [
         write_speedup, read_speedup, partial_speedup,
-        compression_factor, cloud_factor, metadata_factor,
+        compression_factor, size_factor, metadata_factor,
     ]
 
     x_cats = np.arange(len(categories))
-    bars = ax.barh(x_cats, improvements, 0.5, color=nova_color, alpha=0.9)
-    ax.axvline(x=1.0, color=fits_color, linestyle="--", alpha=0.7, label="FITS baseline (1.0x)")
+    bars = ax.barh(x_cats, improvements, 0.5, color=FORMAT_COLORS["NOVA"],
+                   alpha=0.9)
+    ax.axvline(x=1.0, color=FORMAT_COLORS["FITS"], linestyle="--",
+               alpha=0.7, label="FITS baseline (1.0x)")
 
     for bar, imp in zip(bars, improvements):
         ax.text(
@@ -346,22 +380,37 @@ def generate_performance_plots(
             bar.get_y() + bar.get_height() / 2,
             f"{imp:.1f}x",
             ha="left", va="center",
-            color=accent_green, fontweight="bold", fontsize=11,
+            color=ACCENT_GREEN, fontweight="bold", fontsize=11,
         )
 
     ax.set_yticks(x_cats)
-    ax.set_yticklabels(categories, color=text_color)
+    ax.set_yticklabels(categories, color=TEXT_COLOR)
     ax.set_xlabel("Improvement Factor vs FITS (higher = better)")
     ax.set_title(
         f"NOVA Improvement Summary — {sizes[-1][0]}×{sizes[-1][1]} Realistic Sky",
-        color=text_color, fontsize=14, fontweight="bold",
+        color=TEXT_COLOR, fontsize=14, fontweight="bold",
     )
-    ax.legend(facecolor=bg_color, edgecolor=grid_color, labelcolor=text_color, loc="lower right")
-    ax.grid(axis="x", color=grid_color, alpha=0.3)
+    ax.legend(facecolor=BG_COLOR, edgecolor=GRID_COLOR,
+              labelcolor=TEXT_COLOR, loc="lower right")
+    ax.grid(axis="x", color=GRID_COLOR, alpha=0.3)
 
     fig.tight_layout()
     path = output_dir / "improvement_summary.png"
-    fig.savefig(path, dpi=150, facecolor=bg_color, bbox_inches="tight")
+    fig.savefig(path, dpi=150, facecolor=BG_COLOR, bbox_inches="tight")
+    plt.close(fig)
+    generated_files.append(str(path))
+
+    # ── Plot 5: File Size Comparison ──
+    fig, ax = plt.subplots(figsize=(10, 5))
+    fig.patch.set_facecolor(BG_COLOR)
+    _style_ax(ax)
+
+    _grouped_bars(ax, file_sizes, "File Size (MB)",
+                  "Storage Efficiency (lower = better)")
+
+    fig.tight_layout()
+    path = output_dir / "file_size_comparison.png"
+    fig.savefig(path, dpi=150, facecolor=BG_COLOR, bbox_inches="tight")
     plt.close(fig)
     generated_files.append(str(path))
 
