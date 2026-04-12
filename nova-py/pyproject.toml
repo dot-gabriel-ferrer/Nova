@@ -30,6 +30,9 @@ dependencies = [
     "zstandard>=0.21",
 ]
 
+[project.scripts]
+nova = "nova.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
@@ -41,6 +44,15 @@ notebooks = [
     "nbconvert>=7.0",
     "ipykernel>=6.0",
     "matplotlib>=3.7",
+]
+ml = [
+    "torch>=2.0",
+]
+plots = [
+    "matplotlib>=3.7",
+]
+all = [
+    "nova-astro[notebooks,ml,plots]",
 ]
 
 [tool.pytest.ini_options]

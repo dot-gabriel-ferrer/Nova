@@ -12,17 +12,48 @@ from nova.fits_converter import from_fits, to_fits
 from nova.provenance import ProvenanceBundle
 from nova.integrity import compute_sha256, verify_chunk
 from nova.benchmarks import run_full_comparison, generate_test_data
+from nova.validation import validate_metadata, validate_wcs, validate_provenance, validate_store
+from nova.ml import (
+    NormalizationMetadata,
+    compute_normalization,
+    normalize,
+    denormalize,
+    to_tensor,
+)
+
+# Convenience aliases matching README examples
+open = open_dataset
+validate = validate_store
 
 __all__ = [
+    # Core
     "NovaDataset",
     "open_dataset",
     "create_dataset",
+    "open",
+    # WCS
     "NovaWCS",
+    # FITS converter
     "from_fits",
     "to_fits",
+    # Provenance
     "ProvenanceBundle",
+    # Integrity
     "compute_sha256",
     "verify_chunk",
+    # Benchmarks
     "run_full_comparison",
     "generate_test_data",
+    # Validation
+    "validate_metadata",
+    "validate_wcs",
+    "validate_provenance",
+    "validate_store",
+    "validate",
+    # ML
+    "NormalizationMetadata",
+    "compute_normalization",
+    "normalize",
+    "denormalize",
+    "to_tensor",
 ]
