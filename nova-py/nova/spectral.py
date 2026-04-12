@@ -72,7 +72,7 @@ DEFAULT_SPECTRAL_INDICES: dict[str, dict[str, tuple[float, float]]] = {
     "D4000": {
         "feature": (4000.0, 4100.0),
         "blue_cont": (3850.0, 3950.0),
-        "red_cont": (4000.0, 4100.0),
+        "red_cont": (4100.0, 4250.0),
     },
     "Mg_b": {
         "feature": (5160.0, 5192.0),
@@ -799,7 +799,10 @@ def equivalent_width_spectral(
 
     # Equivalent width: integral of (1 - F/F_cont) dw
     integrand = 1.0 - line_flux / cont_model
-    _trapz = getattr(np, "trapezoid", None) or np.trapz
+    try:
+        _trapz = np.trapezoid
+    except AttributeError:
+        _trapz = np.trapz  # NumPy < 2.0
     ew = float(_trapz(integrand, line_wave))
 
     # Noise-based uncertainty estimate
