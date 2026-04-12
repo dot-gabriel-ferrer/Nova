@@ -400,7 +400,7 @@ def iterative_psf_subtract(
     # Process brightest first
     order = np.argsort(-np.abs(rough_flux))
 
-    source_table: list[dict[str, float]] = [{}] * n_sources
+    source_table: list[dict[str, float]] = [{} for _ in range(n_sources)]
 
     for k in order:
         x0, y0 = positions[k]
