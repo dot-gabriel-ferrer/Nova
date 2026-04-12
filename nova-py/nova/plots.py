@@ -51,7 +51,7 @@ GRID_COLOR = "#30363d"
 ACCENT_GREEN = "#4CAF50"
 
 
-def _style_ax(ax: object) -> None:  # type: ignore[override]
+def _style_ax(ax: object) -> None:
     """Apply dark theme to a matplotlib axis."""
     ax.set_facecolor(BG_COLOR)  # type: ignore[attr-defined]
     ax.tick_params(colors=TEXT_COLOR)  # type: ignore[attr-defined]

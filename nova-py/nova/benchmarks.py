@@ -219,8 +219,10 @@ def benchmark_nova_write(
     output_dir : str or Path, optional
         Output directory. Uses a temporary directory if not provided.
     compression_level : int
-        ZSTD compression level (default 0 for raw speed, matching FITS which
-        is also uncompressed).
+        ZSTD compression level.  Defaults to 0 (no compression) for an
+        apples-to-apples comparison with FITS, which is also uncompressed.
+        The container default (``DEFAULT_COMPRESSION_LEVEL = 1``) uses light
+        compression for storage efficiency.
 
     Returns
     -------

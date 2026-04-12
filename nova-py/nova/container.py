@@ -27,6 +27,8 @@ NOVA_VERSION = "0.1.0"
 DEFAULT_CHUNK_SHAPE_2D: tuple[int, int] = (512, 512)
 
 # Default compression settings
+# Level 1 gives the best speed/ratio tradeoff for typical astronomical data
+# while keeping writes nearly as fast as raw (uncompressed) I/O.
 DEFAULT_COMPRESSOR = "zstd"
 DEFAULT_COMPRESSION_LEVEL = 1
 
