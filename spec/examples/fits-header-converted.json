@@ -1,0 +1,70 @@
+{
+  "@context": "https://nova-astro.org/v0.1/context.jsonld",
+  "@type": "nova:Observation",
+  "nova:version": "0.1.0",
+  "nova:created": "2026-04-12T12:00:00Z",
+  "nova:data_level": "L1",
+  "nova:instrument": {
+    "@type": "nova:Instrument",
+    "nova:name": "DECam",
+    "nova:telescope": "Blanco 4m",
+    "nova:observatory": "CTIO",
+    "nova:filter": "g"
+  },
+  "nova:observation": {
+    "@type": "nova:ObservationDetails",
+    "nova:target": "COSMOS field",
+    "nova:ra": 150.1191666667,
+    "nova:dec": 2.2058333333,
+    "nova:exptime": 300.0,
+    "nova:date_obs": "2025-03-15T04:30:00Z",
+    "nova:airmass": 1.15
+  },
+  "nova:data_arrays": [
+    {
+      "nova:path": "data/science",
+      "nova:role": "science",
+      "nova:dtype": "float64",
+      "nova:shape": [4096, 4096],
+      "nova:chunks": [512, 512],
+      "nova:compression": "zstd",
+      "nova:compression_level": 3,
+      "nova:fill_value": "NaN",
+      "nova:unit": "electron/s"
+    },
+    {
+      "nova:path": "data/uncertainty",
+      "nova:role": "uncertainty",
+      "nova:dtype": "float32",
+      "nova:shape": [4096, 4096],
+      "nova:chunks": [512, 512],
+      "nova:compression": "zstd",
+      "nova:compression_level": 3,
+      "nova:unit": "electron/s"
+    },
+    {
+      "nova:path": "data/mask",
+      "nova:role": "mask",
+      "nova:dtype": "uint8",
+      "nova:shape": [4096, 4096],
+      "nova:chunks": [512, 512],
+      "nova:compression": "zstd"
+    }
+  ],
+  "nova:content_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "nova:fits_origin": {
+    "nova:filename": "DECam_00123456_g.fits.fz",
+    "nova:header_cards": 287,
+    "nova:extensions": 3,
+    "nova:bitpix": -64
+  },
+  "nova:keywords": {
+    "OBJECT": "COSMOS field",
+    "TELESCOP": "CTIO 4.0-m telescope",
+    "INSTRUME": "DECam",
+    "FILTER": "g DECam SDSS c0001 4720.0 1520.0",
+    "GAIN": 4.05,
+    "RDNOISE": 10.5,
+    "SATURATE": 65535
+  }
+}

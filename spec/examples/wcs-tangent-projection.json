@@ -1,0 +1,63 @@
+{
+  "@context": "https://nova-astro.org/v0.1/context.jsonld",
+  "@type": "nova:WCS",
+  "nova:naxes": 2,
+  "nova:axes": [
+    {
+      "@type": "nova:CelestialAxis",
+      "nova:index": 0,
+      "nova:ctype": "RA---TAN",
+      "nova:crpix": 2048.0,
+      "nova:crval": 150.1191666667,
+      "nova:unit": "deg",
+      "nova:ucd": "pos.eq.ra",
+      "nova:name": "Right Ascension"
+    },
+    {
+      "@type": "nova:CelestialAxis",
+      "nova:index": 1,
+      "nova:ctype": "DEC--TAN",
+      "nova:crpix": 2048.0,
+      "nova:crval": 2.2058333333,
+      "nova:unit": "deg",
+      "nova:ucd": "pos.eq.dec",
+      "nova:name": "Declination"
+    }
+  ],
+  "nova:transform": {
+    "@type": "nova:AffineTransform",
+    "nova:cd_matrix": [
+      [-7.305555555556e-05, 0.0],
+      [0.0, 7.305555555556e-05]
+    ],
+    "nova:pixel_scale": {
+      "nova:value": 0.263,
+      "nova:unit": "arcsec/pixel"
+    }
+  },
+  "nova:celestial_frame": {
+    "@type": "nova:CelestialFrame",
+    "nova:system": "ICRS",
+    "nova:equinox": 2000.0
+  },
+  "nova:projection": {
+    "@type": "nova:GnomonicProjection",
+    "nova:code": "TAN",
+    "nova:name": "Gnomonic (Tangent Plane)"
+  },
+  "nova:fits_origin": {
+    "WCSAXES": 2,
+    "CRPIX1": 2048.0,
+    "CRPIX2": 2048.0,
+    "CRVAL1": 150.1191666667,
+    "CRVAL2": 2.2058333333,
+    "CTYPE1": "RA---TAN",
+    "CTYPE2": "DEC--TAN",
+    "CD1_1": -7.305555555556e-05,
+    "CD1_2": 0.0,
+    "CD2_1": 0.0,
+    "CD2_2": 7.305555555556e-05,
+    "RADESYS": "ICRS",
+    "EQUINOX": 2000.0
+  }
+}
