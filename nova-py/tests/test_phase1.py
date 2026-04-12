@@ -494,8 +494,8 @@ class TestVersion:
 
     def test_version_is_0_2(self) -> None:
         import nova
-        assert nova.__version__ == "0.2.0"
-        assert NOVA_VERSION == "0.2.0"
+        assert nova.__version__ == "0.3.0"
+        assert NOVA_VERSION == "0.3.0"
 
 
 # ──────────────────────────────────────────────────────────────────────────

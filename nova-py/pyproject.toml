@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nova-astro"
-version = "0.2.0"
+version = "0.3.0"
 description = "Reference implementation for the NOVA astronomical data format"
 readme = "README.md"
 license = {text = "MIT"}
@@ -34,6 +34,10 @@ dependencies = [
 nova = "nova.cli:main"
 
 [project.optional-dependencies]
+cloud = [
+    "fsspec>=2023.1",
+    "aiohttp>=3.8",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -53,7 +57,7 @@ plots = [
     "h5py>=3.0",
 ]
 all = [
-    "nova-astro[notebooks,ml,plots]",
+    "nova-astro[cloud,notebooks,ml,plots]",
 ]
 
 [tool.pytest.ini_options]

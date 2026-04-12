@@ -77,6 +77,30 @@ def main(argv: list[str] | None = None) -> int:
         help="Data pattern (default: realistic_sky)",
     )
 
+    # migrate command
+    migrate_parser = subparsers.add_parser(
+        "migrate",
+        help="Batch convert a directory of FITS files to NOVA format",
+    )
+    migrate_parser.add_argument("source", help="Source directory containing FITS files")
+    migrate_parser.add_argument("dest", help="Destination directory for NOVA stores")
+    migrate_parser.add_argument(
+        "--parallel", type=int, default=1,
+        help="Number of parallel conversion workers (default: 1)",
+    )
+    migrate_parser.add_argument(
+        "--verify", action="store_true",
+        help="Verify round-trip fidelity for each converted file",
+    )
+    migrate_parser.add_argument(
+        "--dry-run", action="store_true",
+        help="List files that would be converted without writing anything",
+    )
+    migrate_parser.add_argument(
+        "--incremental", action="store_true",
+        help="Skip files whose NOVA output already exists",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -91,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_validate(args)
     elif args.command == "benchmark":
         return _cmd_benchmark(args)
+    elif args.command == "migrate":
+        return _cmd_migrate(args)
 
     return 0
 
@@ -265,6 +291,28 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
         print()
 
     return 0
+
+
+def _cmd_migrate(args: argparse.Namespace) -> int:
+    """Handle the migrate command."""
+    from nova.migrate import migrate_directory
+
+    print(f"NOVA batch migration: {args.source} -> {args.dest}")
+    if args.dry_run:
+        print("  (dry-run mode -- nothing will be written)")
+    print("=" * 60)
+
+    report = migrate_directory(
+        src=args.source,
+        dst=args.dest,
+        parallel=args.parallel,
+        verify=args.verify,
+        dry_run=args.dry_run,
+        incremental=args.incremental,
+    )
+
+    print(report.summary())
+    return 0 if report.failed == 0 else 1
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ from nova.integrity import compute_sha256
 
 
 # NOVA format version
-NOVA_VERSION = "0.2.0"
+NOVA_VERSION = "0.3.0"
 
 # Default chunk shape for 2D images (512x512 float64 = 2 MB per chunk)
 DEFAULT_CHUNK_SHAPE_2D: tuple[int, int] = (512, 512)
