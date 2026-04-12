@@ -1,12 +1,14 @@
-"""NOVA — Next-generation Open Volumetric Archive.
+"""NOVA -- Next-generation Open Volumetric Archive.
 
 Reference Python implementation for the NOVA astronomical data format.
 A cloud-native scientific data format designed to succeed FITS.
 """
 
-__version__ = "0.1.0"
+from nova.constants import NOVA_VERSION
 
-from nova.container import NovaDataset, open_dataset, create_dataset
+__version__ = NOVA_VERSION
+
+from nova.container import NovaDataset, NovaExtension, NovaTable, open_dataset, create_dataset
 from nova.wcs import NovaWCS
 from nova.fits_converter import from_fits, to_fits
 from nova.provenance import ProvenanceBundle
@@ -21,6 +23,13 @@ from nova.ml import (
     denormalize,
     to_tensor,
 )
+from nova.remote import open_remote, is_remote_url
+from nova.migrate import migrate_directory, MigrationReport
+from nova.streaming import StreamWriter, open_appendable, append_frame
+from nova.adapters import to_ccddata, from_ccddata, to_nddata, nova_to_hdulist
+from nova import constants as constants
+from nova import math as math
+from nova import visualization as viz
 
 # Convenience aliases matching README examples
 open = open_dataset
@@ -29,6 +38,8 @@ validate = validate_store
 __all__ = [
     # Core
     "NovaDataset",
+    "NovaExtension",
+    "NovaTable",
     "open_dataset",
     "create_dataset",
     "open",
@@ -61,4 +72,25 @@ __all__ = [
     "normalize",
     "denormalize",
     "to_tensor",
+    # Remote access (Phase 2)
+    "open_remote",
+    "is_remote_url",
+    # Batch migration (Phase 2)
+    "migrate_directory",
+    "MigrationReport",
+    # Streaming (Phase 2)
+    "StreamWriter",
+    "open_appendable",
+    "append_frame",
+    # Pipeline adapters (Phase 2)
+    "to_ccddata",
+    "from_ccddata",
+    "to_nddata",
+    "nova_to_hdulist",
+    # Math (integrated mathematical tools)
+    "math",
+    # Visualization
+    "viz",
+    # Constants
+    "constants",
 ]

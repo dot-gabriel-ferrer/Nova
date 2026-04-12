@@ -202,7 +202,7 @@ def generate_test_data(
 
 
 # ---------------------------------------------------------------------------
-#  NOVA benchmarks (fast binary I/O — primary performance path)
+#  NOVA benchmarks (fast binary I/O -- primary performance path)
 # ---------------------------------------------------------------------------
 
 def benchmark_nova_write(
@@ -446,7 +446,7 @@ def benchmark_nova_zarr_partial_read(
     store_path: str | Path,
     slices: tuple[slice, ...],
 ) -> BenchmarkResult:
-    """Benchmark NOVA Zarr partial (chunk-based) read — cloud-native access.
+    """Benchmark NOVA Zarr partial (chunk-based) read -- cloud-native access.
 
     Parameters
     ----------
@@ -563,7 +563,7 @@ def benchmark_fits_read(
 ) -> BenchmarkResult:
     """Benchmark FITS full read performance (no memory mapping).
 
-    Memory mapping is disabled for a fair comparison — it defers actual I/O
+    Memory mapping is disabled for a fair comparison -- it defers actual I/O
     to array access time which isn't captured by this benchmark.
 
     Parameters
@@ -614,7 +614,7 @@ def benchmark_fits_partial_read(
     fits_path: str | Path,
     slices: tuple[slice, ...],
 ) -> BenchmarkResult:
-    """Benchmark FITS partial read — must read entire file.
+    """Benchmark FITS partial read -- must read entire file.
 
     Parameters
     ----------
@@ -816,7 +816,7 @@ def benchmark_hdf5_partial_read(
 
 
 # ---------------------------------------------------------------------------
-#  NumPy benchmarks (baseline — raw binary)
+#  NumPy benchmarks (baseline -- raw binary)
 # ---------------------------------------------------------------------------
 
 def benchmark_numpy_write(

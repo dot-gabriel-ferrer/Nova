@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from nova.constants import NOVA_CONTEXT
+
 
 # Path to schemas directory (relative to the repo root)
 _SCHEMA_DIR = Path(__file__).resolve().parent.parent.parent / "spec" / "schemas"
@@ -67,7 +69,7 @@ def validate_metadata(data: dict[str, Any]) -> list[str]:
     # Validate @context
     ctx = data.get("@context")
     if ctx is not None:
-        valid_ctx = "https://nova-astro.org/v0.1/context.jsonld"
+        valid_ctx = NOVA_CONTEXT
         if isinstance(ctx, str):
             if ctx != valid_ctx:
                 errors.append(
@@ -225,7 +227,7 @@ def validate_provenance(
     # Validate @context includes both NOVA and PROV
     ctx = data.get("@context")
     if ctx is not None:
-        nova_ctx = "https://nova-astro.org/v0.1/context.jsonld"
+        nova_ctx = NOVA_CONTEXT
         if isinstance(ctx, list):
             if nova_ctx not in ctx:
                 errors.append(
@@ -342,7 +344,7 @@ def validate_store(store_path: str | Path) -> dict[str, list[str]]:
         else:
             results["provenance.json"] = []
 
-    # Validate nova_index.json (optional — only built on demand)
+    # Validate nova_index.json (optional -- only built on demand)
     index_path = store_path / "nova_index.json"
     if index_path.exists():
         with open(index_path) as f:

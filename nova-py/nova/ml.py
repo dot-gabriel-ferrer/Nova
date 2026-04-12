@@ -13,6 +13,8 @@ from typing import Any
 
 import numpy as np
 
+from nova.constants import MAD_TO_STD
+
 
 # Supported normalization methods
 NORMALIZATION_METHODS = ("min_max", "z_score", "robust", "log", "asinh", "custom")
@@ -171,7 +173,7 @@ def normalize(
         median = metadata.median if metadata.median is not None else 0.0
         mad = metadata.mad if metadata.mad is not None else 1.0
         if mad > 0:
-            result = (result - median) / (1.4826 * mad)
+            result = (result - median) / (MAD_TO_STD * mad)
         else:
             result = result - median
 
@@ -221,7 +223,7 @@ def denormalize(
     elif metadata.method == "robust":
         median = metadata.median if metadata.median is not None else 0.0
         mad = metadata.mad if metadata.mad is not None else 1.0
-        result = result * (1.4826 * mad) + median
+        result = result * (MAD_TO_STD * mad) + median
 
     elif metadata.method == "log":
         min_val = metadata.min_val if metadata.min_val is not None else 0.0

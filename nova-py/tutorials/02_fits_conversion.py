@@ -1,10 +1,10 @@
-"""Tutorial 02: FITS↔NOVA Conversion — Migrating from FITS to NOVA.
+"""Tutorial 02: FITS<->NOVA Conversion -- Migrating from FITS to NOVA.
 
 This step-by-step tutorial demonstrates how to:
   1. Create a realistic FITS file with WCS and header keywords
-  2. Convert FITS → NOVA (preserving all metadata)
+  2. Convert FITS -> NOVA (preserving all metadata)
   3. Inspect the NOVA dataset and its JSON-LD metadata
-  4. Convert NOVA → FITS (lossless round-trip)
+  4. Convert NOVA -> FITS (lossless round-trip)
   5. Verify round-trip fidelity
 
 Run:
@@ -33,7 +33,7 @@ def main() -> None:
     from nova.container import NovaDataset
 
     print("=" * 70)
-    print("  FITS ↔ NOVA Conversion Tutorial")
+    print("  FITS <-> NOVA Conversion Tutorial")
     print("  Migrating astronomical data from FITS to NOVA and back")
     print("=" * 70)
     print()
@@ -41,7 +41,7 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
 
-        # ── Step 1: Create a realistic FITS file ──────────────────────────
+        # -- Step 1: Create a realistic FITS file --------------------------
         print("Step 1: Create a realistic FITS file with WCS metadata")
         print("-" * 70)
 
@@ -92,8 +92,8 @@ def main() -> None:
         print(f"  Instrument:  VLT/FORS2")
         print()
 
-        # ── Step 2: Convert FITS → NOVA ───────────────────────────────────
-        print("Step 2: Convert FITS → NOVA format")
+        # -- Step 2: Convert FITS -> NOVA -----------------------------------
+        print("Step 2: Convert FITS -> NOVA format")
         print("-" * 70)
 
         nova_path = tmpdir / "m42_observation.nova.zarr"
@@ -105,11 +105,11 @@ def main() -> None:
         print(f"  Output:      {nova_path.name}")
         print(f"  Size:        {nova_size / (1024*1024):.1f} MB")
         print(f"  Compression: {data.nbytes / nova_size:.1f}x")
-        print(f"  ✓ Conversion complete!")
+        print(f"  OK Conversion complete!")
         ds.close()
         print()
 
-        # ── Step 3: Inspect NOVA metadata ─────────────────────────────────
+        # -- Step 3: Inspect NOVA metadata ---------------------------------
         print("Step 3: Inspect the NOVA dataset and JSON-LD metadata")
         print("-" * 70)
 
@@ -158,8 +158,8 @@ def main() -> None:
 
         ds.close()
 
-        # ── Step 4: Convert NOVA → FITS (round-trip) ─────────────────────
-        print("Step 4: Convert NOVA → FITS (round-trip)")
+        # -- Step 4: Convert NOVA -> FITS (round-trip) ---------------------
+        print("Step 4: Convert NOVA -> FITS (round-trip)")
         print("-" * 70)
 
         roundtrip_path = tmpdir / "m42_roundtrip.fits"
@@ -170,7 +170,7 @@ def main() -> None:
         print(f"  Size:        {rt_size / (1024*1024):.1f} MB")
         print()
 
-        # ── Step 5: Verify round-trip fidelity ────────────────────────────
+        # -- Step 5: Verify round-trip fidelity ----------------------------
         print("Step 5: Verify lossless round-trip fidelity (INV-1)")
         print("-" * 70)
 
@@ -179,11 +179,11 @@ def main() -> None:
             rt_header = hdul_rt[0].header
 
         # Compare data
-        # Original was float32 → big-endian in FITS → we compare values
+        # Original was float32 -> big-endian in FITS -> we compare values
         original_data = data.astype(">f4")  # Match FITS endianness
         max_diff = np.max(np.abs(rt_data.astype(np.float64) - original_data.astype(np.float64)))
         print(f"  Max data diff:  {max_diff}")
-        print(f"  Data match:     {'✓ PASS' if max_diff == 0 else '✗ FAIL'}")
+        print(f"  Data match:     {'OK PASS' if max_diff == 0 else 'FAIL FAIL'}")
 
         # Compare WCS keywords
         wcs_match = True
@@ -193,18 +193,18 @@ def main() -> None:
             match = orig == rt
             if not match:
                 wcs_match = False
-            symbol = "✓" if match else "✗"
+            symbol = "OK" if match else "FAIL"
             print(f"  {key:8s}:     {symbol} (original={orig}, roundtrip={rt})")
 
         print()
         if max_diff == 0 and wcs_match:
-            print("  ✓ LOSSLESS ROUND-TRIP VERIFIED (INV-1: BACKWARD_COMPAT)")
+            print("  OK LOSSLESS ROUND-TRIP VERIFIED (INV-1: BACKWARD_COMPAT)")
         else:
-            print("  ⚠ Round-trip has minor differences (expected for float precision)")
+            print("  [note] Round-trip has minor differences (expected for float precision)")
 
     print()
     print("=" * 70)
-    print("  ✓ Tutorial complete! FITS → NOVA → FITS conversion demonstrated.")
+    print("  OK Tutorial complete! FITS -> NOVA -> FITS conversion demonstrated.")
     print("=" * 70)
 
 

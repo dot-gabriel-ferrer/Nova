@@ -1,7 +1,7 @@
 """NOVA command-line interface.
 
 Provides CLI tools for NOVA format operations:
-- nova convert: FITS↔NOVA conversion
+- nova convert: FITS<->NOVA conversion
 - nova info: Display dataset information
 - nova validate: Validate NOVA stores
 - nova benchmark: Run performance benchmarks
@@ -32,7 +32,7 @@ def main(argv: list[str] | None = None) -> int:
     """
     parser = argparse.ArgumentParser(
         prog="nova",
-        description="NOVA — Next-generation Open Volumetric Archive CLI",
+        description="NOVA -- Next-generation Open Volumetric Archive CLI",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -77,6 +77,30 @@ def main(argv: list[str] | None = None) -> int:
         help="Data pattern (default: realistic_sky)",
     )
 
+    # migrate command
+    migrate_parser = subparsers.add_parser(
+        "migrate",
+        help="Batch convert a directory of FITS files to NOVA format",
+    )
+    migrate_parser.add_argument("source", help="Source directory containing FITS files")
+    migrate_parser.add_argument("dest", help="Destination directory for NOVA stores")
+    migrate_parser.add_argument(
+        "--parallel", type=int, default=1,
+        help="Number of parallel conversion workers (default: 1)",
+    )
+    migrate_parser.add_argument(
+        "--verify", action="store_true",
+        help="Verify round-trip fidelity for each converted file",
+    )
+    migrate_parser.add_argument(
+        "--dry-run", action="store_true",
+        help="List files that would be converted without writing anything",
+    )
+    migrate_parser.add_argument(
+        "--incremental", action="store_true",
+        help="Skip files whose NOVA output already exists",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -91,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_validate(args)
     elif args.command == "benchmark":
         return _cmd_benchmark(args)
+    elif args.command == "migrate":
+        return _cmd_migrate(args)
 
     return 0
 
@@ -110,9 +136,9 @@ def _cmd_convert(args: argparse.Namespace) -> int:
     is_nova_input = input_path.name.endswith(".nova.zarr")
 
     if is_fits_input:
-        # FITS → NOVA
+        # FITS -> NOVA
         from nova.fits_converter import from_fits
-        print(f"Converting FITS → NOVA: {input_path} → {output_path}")
+        print(f"Converting FITS -> NOVA: {input_path} -> {output_path}")
         start = time.perf_counter()
         ds = from_fits(input_path, output_path)
         elapsed = time.perf_counter() - start
@@ -125,9 +151,9 @@ def _cmd_convert(args: argparse.Namespace) -> int:
         return 0
 
     elif is_nova_input:
-        # NOVA → FITS
+        # NOVA -> FITS
         from nova.fits_converter import to_fits
-        print(f"Converting NOVA → FITS: {input_path} → {output_path}")
+        print(f"Converting NOVA -> FITS: {input_path} -> {output_path}")
         start = time.perf_counter()
         to_fits(input_path, output_path, overwrite=args.overwrite)
         elapsed = time.perf_counter() - start
@@ -160,12 +186,15 @@ def _cmd_info(args: argparse.Namespace) -> int:
     # Metadata
     meta_path = store_path / "nova_metadata.json"
     if meta_path.exists():
-        with open(meta_path) as f:
-            meta = json.load(f)
-        print(f"  Version:    {meta.get('nova:version', 'unknown')}")
-        print(f"  Created:    {meta.get('nova:created', 'unknown')}")
-        print(f"  Data Level: {meta.get('nova:data_level', 'unknown')}")
-        print(f"  Type:       {meta.get('@type', 'unknown')}")
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+            print(f"  Version:    {meta.get('nova:version', 'unknown')}")
+            print(f"  Created:    {meta.get('nova:created', 'unknown')}")
+            print(f"  Data Level: {meta.get('nova:data_level', 'unknown')}")
+            print(f"  Type:       {meta.get('@type', 'unknown')}")
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"  Error reading metadata: {e}", file=sys.stderr)
 
     # Data arrays
     import numpy as np
@@ -230,16 +259,16 @@ def _cmd_validate(args: argparse.Namespace) -> int:
 
     for filename, errors in results.items():
         if errors:
-            print(f"\n  ✗ {filename} ({len(errors)} errors)")
+            print(f"\n  FAIL {filename} ({len(errors)} errors)")
             for error in errors:
                 print(f"    - {error}")
             total_errors += len(errors)
         else:
-            print(f"  ✓ {filename}")
+            print(f"  OK   {filename}")
 
     print()
     if total_errors == 0:
-        print("Validation passed ✓")
+        print("Validation passed")
         return 0
     else:
         print(f"Validation failed: {total_errors} error(s) found")
@@ -265,6 +294,28 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
         print()
 
     return 0
+
+
+def _cmd_migrate(args: argparse.Namespace) -> int:
+    """Handle the migrate command."""
+    from nova.migrate import migrate_directory
+
+    print(f"NOVA batch migration: {args.source} -> {args.dest}")
+    if args.dry_run:
+        print("  (dry-run mode -- nothing will be written)")
+    print("=" * 60)
+
+    report = migrate_directory(
+        src=args.source,
+        dst=args.dest,
+        parallel=args.parallel,
+        verify=args.verify,
+        dry_run=args.dry_run,
+        incremental=args.incremental,
+    )
+
+    print(report.summary())
+    return 0 if report.failed == 0 else 1
 
 
 if __name__ == "__main__":

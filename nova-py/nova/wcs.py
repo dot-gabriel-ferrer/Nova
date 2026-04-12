@@ -11,8 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-# NOVA JSON-LD context
-NOVA_CONTEXT = "https://nova-astro.org/v0.1/context.jsonld"
+from nova.constants import NOVA_CONTEXT, ARCSEC_PER_DEG
 
 # FITS projection code to human-readable name mapping
 PROJECTION_NAMES: dict[str, str] = {
@@ -20,7 +19,7 @@ PROJECTION_NAMES: dict[str, str] = {
     "SIN": "Slant Orthographic",
     "AIT": "Hammer-Aitoff",
     "MOL": "Mollweide",
-    "CAR": "Plate Carrée",
+    "CAR": "Plate Carree",
     "MER": "Mercator",
     "STG": "Stereographic",
     "ARC": "Zenithal Equidistant",
@@ -166,7 +165,9 @@ class AffineTransform:
             # Scale = sqrt(CD1_1^2 + CD2_1^2) * 3600 for arcsec/pixel
             cd11 = self.cd_matrix[0][0]
             cd21 = self.cd_matrix[1][0]
-            self.pixel_scale = round(math.sqrt(cd11**2 + cd21**2) * 3600, 6)
+            self.pixel_scale = round(
+                math.sqrt(cd11**2 + cd21**2) * ARCSEC_PER_DEG, 6
+            )
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-LD dictionary."""

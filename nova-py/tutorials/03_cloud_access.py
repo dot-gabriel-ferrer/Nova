@@ -1,4 +1,4 @@
-"""Tutorial 03: Cloud-Native Access — Efficient chunk-based data retrieval.
+"""Tutorial 03: Cloud-Native Access -- Efficient chunk-based data retrieval.
 
 This tutorial demonstrates NOVA's cloud-native architecture:
   1. How Zarr chunks enable partial data access
@@ -35,8 +35,8 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
 
-        # ── Step 1: Create a large dataset ────────────────────────────────
-        print("Step 1: Create a large 4096×4096 dataset (128 MB raw)")
+        # -- Step 1: Create a large dataset --------------------------------
+        print("Step 1: Create a large 4096x4096 dataset (128 MB raw)")
         print("-" * 70)
 
         rng = np.random.default_rng(42)
@@ -70,7 +70,7 @@ def main() -> None:
         print(f"  Compression:  {data.nbytes / total_size:.1f}x")
         print()
 
-        # ── Step 2: Understand the chunk structure ────────────────────────
+        # -- Step 2: Understand the chunk structure ------------------------
         print("Step 2: Understand the Zarr chunk structure")
         print("-" * 70)
 
@@ -78,20 +78,20 @@ def main() -> None:
         n_chunks_x = 4096 // chunk_size[0]
         n_chunks_y = 4096 // chunk_size[1]
         print(f"  Chunk shape:  {chunk_size}")
-        print(f"  Grid:         {n_chunks_x} × {n_chunks_y} = {n_chunks_x * n_chunks_y} chunks")
+        print(f"  Grid:         {n_chunks_x} x {n_chunks_y} = {n_chunks_x * n_chunks_y} chunks")
         print(f"  Chunk size:   {chunk_size[0] * chunk_size[1] * 8 / (1024*1024):.1f} MB (raw)")
         print()
         print("  Chunk layout:")
-        print("  ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐")
+        print("  +-----+-----+-----+-----+-----+-----+-----+-----+")
         for row in range(n_chunks_x):
-            cells = "│".join(f" {row},{c} " for c in range(n_chunks_y))
-            print(f"  │{cells}│")
+            cells = "|".join(f" {row},{c} " for c in range(n_chunks_y))
+            print(f"  |{cells}|")
             if row < n_chunks_x - 1:
-                print("  ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤")
-        print("  └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘")
+                print("  +-----+-----+-----+-----+-----+-----+-----+-----+")
+        print("  +-----+-----+-----+-----+-----+-----+-----+-----+")
         print()
 
-        # ── Step 3: Inspect the chunk index ───────────────────────────────
+        # -- Step 3: Inspect the chunk index -------------------------------
         print("Step 3: Inspect the NOVA chunk index")
         print("-" * 70)
 
@@ -108,11 +108,11 @@ def main() -> None:
             print(f"    Size:   {first['nova:size']} bytes")
             print(f"    SHA256: {first['nova:sha256'][:32]}...")
         print()
-        print("  → In cloud mode, the client reads this index first (1 HTTP request)")
-        print("  → Then fetches only the needed chunks (1 more HTTP request each)")
+        print("  -> In cloud mode, the client reads this index first (1 HTTP request)")
+        print("  -> Then fetches only the needed chunks (1 more HTTP request each)")
         print()
 
-        # ── Step 4: Demonstrate partial vs full reads ─────────────────────
+        # -- Step 4: Demonstrate partial vs full reads ---------------------
         print("Step 4: Compare full read vs partial read performance")
         print("-" * 70)
 
@@ -123,17 +123,17 @@ def main() -> None:
         full_data = np.array(ds.data)  # type: ignore[arg-type]
         t_full = time.perf_counter() - t0
 
-        # Small cutout (256×256 = 0.5 MB vs 128 MB)
+        # Small cutout (256x256 = 0.5 MB vs 128 MB)
         t0 = time.perf_counter()
         cutout_small = np.array(ds.data[1000:1256, 2000:2256])  # type: ignore[index]
         t_small = time.perf_counter() - t0
 
-        # Medium cutout (1024×1024 = 8 MB vs 128 MB)
+        # Medium cutout (1024x1024 = 8 MB vs 128 MB)
         t0 = time.perf_counter()
         cutout_medium = np.array(ds.data[1000:2024, 1000:2024])  # type: ignore[index]
         t_medium = time.perf_counter() - t0
 
-        # Tiny cutout (64×64 = 32 KB vs 128 MB)
+        # Tiny cutout (64x64 = 32 KB vs 128 MB)
         t0 = time.perf_counter()
         cutout_tiny = np.array(ds.data[2000:2064, 2000:2064])  # type: ignore[index]
         t_tiny = time.perf_counter() - t0
@@ -142,23 +142,23 @@ def main() -> None:
 
         print(f"  {'Operation':<30s} {'Shape':>12s} {'Size':>10s} {'Time':>10s}")
         print(f"  {'-'*30} {'-'*12} {'-'*10} {'-'*10}")
-        print(f"  {'Full read':<30s} {'4096×4096':>12s} "
+        print(f"  {'Full read':<30s} {'4096x4096':>12s} "
               f"{'128 MB':>10s} {t_full*1000:>8.1f} ms")
-        print(f"  {'Medium cutout':<30s} {'1024×1024':>12s} "
+        print(f"  {'Medium cutout':<30s} {'1024x1024':>12s} "
               f"{'8 MB':>10s} {t_medium*1000:>8.1f} ms")
-        print(f"  {'Small cutout':<30s} {'256×256':>12s} "
+        print(f"  {'Small cutout':<30s} {'256x256':>12s} "
               f"{'0.5 MB':>10s} {t_small*1000:>8.1f} ms")
-        print(f"  {'Tiny cutout':<30s} {'64×64':>12s} "
+        print(f"  {'Tiny cutout':<30s} {'64x64':>12s} "
               f"{'32 KB':>10s} {t_tiny*1000:>8.1f} ms")
         print()
         print("  Key insight: NOVA reads ONLY the chunks that overlap your region.")
         print("  In cloud storage, this means:")
-        print("    • 1 HTTP request for the chunk index")
-        print("    • 1 HTTP Range request per needed chunk")
-        print("    • No need to download the full file!")
+        print("    * 1 HTTP request for the chunk index")
+        print("    * 1 HTTP Range request per needed chunk")
+        print("    * No need to download the full file!")
         print()
 
-        # ── Step 5: Cloud access pattern simulation ───────────────────────
+        # -- Step 5: Cloud access pattern simulation -----------------------
         print("Step 5: Simulated cloud access pattern")
         print("-" * 70)
 
@@ -183,7 +183,7 @@ def main() -> None:
 
     print()
     print("=" * 70)
-    print("  ✓ Tutorial complete! Cloud-native access patterns demonstrated.")
+    print("  OK Tutorial complete! Cloud-native access patterns demonstrated.")
     print("=" * 70)
 
 

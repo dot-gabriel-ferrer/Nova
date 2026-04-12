@@ -1,4 +1,4 @@
-"""Tutorial 05: Performance Comparison — NOVA vs FITS benchmarks.
+"""Tutorial 05: Performance Comparison -- NOVA vs FITS benchmarks.
 
 This tutorial runs concrete performance benchmarks comparing NOVA and FITS:
   1. Write speed comparison
@@ -35,8 +35,8 @@ def main() -> None:
     print("=" * 70)
     print()
 
-    # ── Step 1: Full comparison with realistic sky data ───────────────────
-    print("Step 1: Full comparison — 2048×2048 realistic sky (float64)")
+    # -- Step 1: Full comparison with realistic sky data -------------------
+    print("Step 1: Full comparison -- 2048x2048 realistic sky (float64)")
     print("-" * 70)
 
     results = run_full_comparison(
@@ -49,7 +49,7 @@ def main() -> None:
         print(comp.summary())
         print()
 
-    # ── Step 2: Compression comparison with different patterns ────────────
+    # -- Step 2: Compression comparison with different patterns ------------
     print("Step 2: Compression ratio with different data patterns")
     print("-" * 70)
 
@@ -75,12 +75,12 @@ def main() -> None:
               f"{nova_res.compression_ratio:>10.2f}x {savings:>8.1f}%")
 
     print()
-    print("  → NOVA's ZSTD compression is most effective on structured data")
-    print("  → Gradient data compresses extremely well (high redundancy)")
-    print("  → Random noise is least compressible (as expected)")
+    print("  -> NOVA's ZSTD compression is most effective on structured data")
+    print("  -> Gradient data compresses extremely well (high redundancy)")
+    print("  -> Random noise is least compressible (as expected)")
     print()
 
-    # ── Step 3: Scaling benchmark ─────────────────────────────────────────
+    # -- Step 3: Scaling benchmark -----------------------------------------
     print("Step 3: Performance scaling with data size")
     print("-" * 70)
 
@@ -108,7 +108,7 @@ def main() -> None:
 
     print()
 
-    # ── Step 4: Partial read advantage ────────────────────────────────────
+    # -- Step 4: Partial read advantage ------------------------------------
     print("Step 4: Partial read advantage (cloud-access simulation)")
     print("-" * 70)
 
@@ -117,9 +117,9 @@ def main() -> None:
     )
 
     cutout_sizes = [
-        ("64×64", (slice(900, 964), slice(900, 964))),
-        ("256×256", (slice(900, 1156), slice(900, 1156))),
-        ("512×512", (slice(768, 1280), slice(768, 1280))),
+        ("64x64", (slice(900, 964), slice(900, 964))),
+        ("256x256", (slice(900, 1156), slice(900, 1156))),
+        ("512x512", (slice(768, 1280), slice(768, 1280))),
     ]
 
     from nova.benchmarks import (
@@ -136,7 +136,7 @@ def main() -> None:
         nova_path = Path(tmpdir) / "bench_write.nova.zarr"
         fits_path = Path(tmpdir) / "bench_write.fits"
 
-        print(f"  Full image:  2048×2048 ({data_large.nbytes / (1024*1024):.0f} MB raw)")
+        print(f"  Full image:  2048x2048 ({data_large.nbytes / (1024*1024):.0f} MB raw)")
         print()
         print(f"  {'Cutout':<12s} {'NOVA time':>11s} {'FITS time':>11s} {'Speedup':>10s}")
         print(f"  {'-'*12} {'-'*11} {'-'*11} {'-'*10}")
@@ -155,24 +155,24 @@ def main() -> None:
             )
 
     print()
-    print("  → NOVA's chunk-based access reads only what's needed")
-    print("  → FITS must load the entire file for any access pattern")
-    print("  → The advantage grows with larger files and smaller cutouts")
+    print("  -> NOVA's chunk-based access reads only what's needed")
+    print("  -> FITS must load the entire file for any access pattern")
+    print("  -> The advantage grows with larger files and smaller cutouts")
     print()
 
-    # ── Summary ──────────────────────────────────────────────────────────
+    # -- Summary ----------------------------------------------------------
     print("=" * 70)
     print("  Summary: NOVA Advantages")
     print("=" * 70)
     print()
-    print("  ✓ ZSTD compression → smaller files (30-90% savings on structured data)")
-    print("  ✓ Chunk-based access → read only what you need")
-    print("  ✓ Cloud-native → ≤2 HTTP requests for any region")
-    print("  ✓ Little-endian native → no byte-swapping on modern hardware")
-    print("  ✓ Parallel writes → lock-free concurrent chunk updates")
+    print("  OK ZSTD compression -> smaller files (30-90% savings on structured data)")
+    print("  OK Chunk-based access -> read only what you need")
+    print("  OK Cloud-native -> <=2 HTTP requests for any region")
+    print("  OK Little-endian native -> no byte-swapping on modern hardware")
+    print("  OK Parallel writes -> lock-free concurrent chunk updates")
     print()
     print("=" * 70)
-    print("  ✓ Tutorial complete! Performance benchmarks demonstrated.")
+    print("  OK Tutorial complete! Performance benchmarks demonstrated.")
     print("=" * 70)
 
 

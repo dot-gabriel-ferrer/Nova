@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nova-astro.org/v0.2/schemas/tables.schema.json",
+  "title": "NOVA Table Collection Schema",
+  "description": "JSON Schema for the NOVA table collection file (tables.json). Describes tabular data stored as columnar Zarr arrays, equivalent to FITS BINTABLE.",
+  "type": "object",
+  "required": ["@context", "@type", "nova:tables"],
+  "properties": {
+    "@context": {
+      "description": "JSON-LD context.",
+      "oneOf": [
+        { "type": "string", "const": "https://nova-astro.org/v0.1/context.jsonld" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
+    "@type": {
+      "const": "nova:TableCollection"
+    },
+    "nova:tables": {
+      "type": "array",
+      "description": "List of tables in the dataset.",
+      "items": { "$ref": "#/$defs/Table" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Table": {
+      "type": "object",
+      "description": "A single table in the dataset.",
+      "required": ["@type", "nova:name", "nova:nrows", "nova:columns"],
+      "properties": {
+        "@type": {
+          "const": "nova:Table"
+        },
+        "nova:name": {
+          "type": "string",
+          "description": "Table name."
+        },
+        "nova:nrows": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of rows."
+        },
+        "nova:columns": {
+          "type": "array",
+          "description": "Column descriptors.",
+          "items": { "$ref": "#/$defs/Column" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Column": {
+      "type": "object",
+      "description": "A single column in a table.",
+      "required": ["nova:name", "nova:dtype", "nova:length"],
+      "properties": {
+        "nova:name": {
+          "type": "string",
+          "description": "Column name."
+        },
+        "nova:dtype": {
+          "type": "string",
+          "description": "NumPy data type string."
+        },
+        "nova:length": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of elements in the column."
+        },
+        "nova:unit": {
+          "type": "string",
+          "description": "Physical unit (IVOA VOUnits)."
+        },
+        "nova:ucd": {
+          "type": "string",
+          "description": "IVOA Unified Content Descriptor."
+        },
+        "nova:description": {
+          "type": "string",
+          "description": "Human-readable column description."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

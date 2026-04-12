@@ -10,6 +10,8 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
+from nova.constants import HASH_READ_SIZE
+
 
 def compute_sha256(data: bytes) -> str:
     """Compute SHA-256 hash of binary data.
@@ -43,7 +45,7 @@ def compute_file_sha256(path: str | Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
         while True:
-            chunk = f.read(65536)
+            chunk = f.read(HASH_READ_SIZE)
             if not chunk:
                 break
             h.update(chunk)

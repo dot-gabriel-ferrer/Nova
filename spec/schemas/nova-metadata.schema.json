@@ -78,6 +78,16 @@
       "type": "object",
       "description": "Additional metadata keywords. Preserves FITS keywords not mapped to structured fields.",
       "additionalProperties": true
+    },
+    "nova:comments": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "FITS COMMENT cards preserved as an ordered array."
+    },
+    "nova:history": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "FITS HISTORY cards preserved as an ordered array."
     }
   },
   "additionalProperties": false,

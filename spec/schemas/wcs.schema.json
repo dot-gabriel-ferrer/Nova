@@ -161,7 +161,7 @@
         },
         "nova:cd_matrix": {
           "type": "array",
-          "description": "The CD matrix as a row-major 2D array. cd_matrix[i][j] = CDi_j in FITS notation. Dimensions MUST match nova:naxes × nova:naxes.",
+          "description": "The CD matrix as a row-major 2D array. cd_matrix[i][j] = CDi_j in FITS notation. Dimensions MUST match nova:naxes x nova:naxes.",
           "items": {
             "type": "array",
             "items": { "type": "number" }

@@ -233,7 +233,7 @@
         "nova:python_version": { "type": "string" },
         "nova:packages": {
           "type": "object",
-          "description": "Package name → version pairs.",
+          "description": "Package name -> version pairs.",
           "additionalProperties": { "type": "string" }
         },
         "nova:hardware": {

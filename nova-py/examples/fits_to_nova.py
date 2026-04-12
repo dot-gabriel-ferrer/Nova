@@ -62,7 +62,7 @@ def main() -> None:
         print(f"  {key:8s} = {value}")
 
     print()
-    print("✓ Lossless round-trip conversion verified (INV-1: BACKWARD_COMPAT)")
+    print("OK Lossless round-trip conversion verified (INV-1: BACKWARD_COMPAT)")
 
 
 if __name__ == "__main__":

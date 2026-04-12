@@ -11,7 +11,8 @@ import datetime
 from dataclasses import dataclass, field
 from typing import Any
 
-NOVA_CONTEXT = "https://nova-astro.org/v0.1/context.jsonld"
+from nova.constants import NOVA_CONTEXT
+
 PROV_CONTEXT = "https://www.w3.org/ns/prov"
 
 
