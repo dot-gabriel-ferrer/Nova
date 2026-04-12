@@ -70,20 +70,20 @@ def main() -> None:
     print(f"   Smoothed noise: sigma = {np.std(smoothed):.1f}")
 
     # -- 4. Image Rebinning --
-    print("\n? 4. Image Rebinning")
+    print("\n>> 4. Image Rebinning")
     rebinned = rebin(image, (64, 64), method="sum")
     print(f"   Original: {image.shape}, total flux = {image.sum():.0f}")
     print(f"   Rebinned: {rebinned.shape}, total flux = {rebinned.sum():.0f}")
     print(f"   Flux conserved: {'[done]' if abs(image.sum() - rebinned.sum()) < 1 else '[error]'}")
 
     # -- 5. Background Estimation --
-    print("\n? 5. Background Estimation")
+    print("\n>> 5. Background Estimation")
     bg, rms_map = estimate_background(image, box_size=64)
     print(f"   Background median: {np.median(bg):.1f} ADU")
     print(f"   RMS median:        {np.median(rms_map):.1f} ADU")
 
     # -- 6. Source Detection --
-    print("\n? 6. Source Detection")
+    print("\n>> 6. Source Detection")
     # Create image with known sources
     sky = rng.poisson(200, (256, 256)).astype(float)
     for _ in range(10):
@@ -96,7 +96,7 @@ def main() -> None:
     print(f"   Detected: {len(sources)} sources")
 
     # -- 7. Aperture Photometry --
-    print("\n? 7. Aperture Photometry")
+    print("\n>> 7. Aperture Photometry")
     if sources:
         src = sources[0]
         phot = aperture_photometry(
@@ -109,7 +109,7 @@ def main() -> None:
         print(f"   Net flux:  {phot['flux_corrected']:.0f}")
 
     # -- 8. Image Stacking --
-    print("\n? 8. Image Stacking")
+    print("\n>> 8. Image Stacking")
     exposures = [rng.poisson(200, (128, 128)).astype(float) for _ in range(5)]
     stacked_mean = stack_images(exposures, method="mean")
     stacked_median = stack_images(exposures, method="median")
@@ -121,17 +121,17 @@ def main() -> None:
     print(f"   sigma-clip stack noise:    sigma = {np.std(stacked_sc[bg_slice]):.2f}")
 
     # -- 9. Spectral Analysis --
-    print("\n? 9. Spectral Analysis")
+    print("\n>> 9. Spectral Analysis")
     wavelength = np.linspace(4000, 7000, 1000)
     flux = np.ones_like(wavelength) * 100.0
     flux -= 50 * np.exp(-0.5 * ((wavelength - 6563) / 10)**2)  # Halpha absorption
     flux += rng.normal(0, 0.5, len(flux))
     norm_flux, continuum = continuum_normalize(wavelength, flux)
     ew = equivalent_width(wavelength, norm_flux, 6563, 50)
-    print(f"   Halpha Equivalent Width: {ew:.2f} ?")
+    print(f"   Halpha Equivalent Width: {ew:.2f} A")
 
     # -- 10. Cosmic Ray Cleaning --
-    print("\n?? 10. Cosmic Ray Cleaning")
+    print("\n>> 10. Cosmic Ray Cleaning")
     cr_image = rng.normal(100, 1, (128, 128))
     cr_image[50, 50] = 50000  # cosmic ray
     cr_image[80, 30] = 30000  # cosmic ray

@@ -200,7 +200,7 @@ def main() -> None:
         if max_diff == 0 and wcs_match:
             print("  OK LOSSLESS ROUND-TRIP VERIFIED (INV-1: BACKWARD_COMPAT)")
         else:
-            print("  ? Round-trip has minor differences (expected for float precision)")
+            print("  [note] Round-trip has minor differences (expected for float precision)")
 
     print()
     print("=" * 70)
