@@ -21,6 +21,8 @@ from nova.ml import (
     denormalize,
     to_tensor,
 )
+from nova import math as math
+from nova import visualization as viz
 
 # Convenience aliases matching README examples
 open = open_dataset
@@ -61,4 +63,8 @@ __all__ = [
     "normalize",
     "denormalize",
     "to_tensor",
+    # Math (integrated mathematical tools)
+    "math",
+    # Visualization
+    "viz",
 ]
