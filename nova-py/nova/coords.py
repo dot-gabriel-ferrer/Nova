@@ -948,13 +948,13 @@ _ALPHA_NGP_RAD: float = 192.85948 * _DEG2RAD
 _DELTA_NGP_RAD: float = 27.12825 * _DEG2RAD
 _L_NCP_RAD: float = 122.93192 * _DEG2RAD
 
-# Pre-compute the equatorial-to-galactic rotation matrix:
-#   R = Rz(l_NCP - pi) . Rx(pi/2 - delta_NGP) . Rz(alpha_NGP)
-_R_EQ_TO_GAL: np.ndarray = (
-    _rotation_matrix_z(_L_NCP_RAD - np.pi)
-    @ _rotation_matrix_y(np.pi / 2.0 - _DELTA_NGP_RAD)
-    @ _rotation_matrix_z(_ALPHA_NGP_RAD)
-)
+# Pre-compute the equatorial-to-galactic rotation matrix.
+# Uses the well-known Hipparcos values (ESA, 1997, Vol. 1, Eq. 1.5.11).
+_R_EQ_TO_GAL: np.ndarray = np.array([
+    [-0.0548755604, -0.8734370902, -0.4838350155],
+    [+0.4941094279, -0.4448296300, +0.7469822445],
+    [-0.8676661490, -0.1980763734, +0.4559837762],
+])
 
 _R_GAL_TO_EQ: np.ndarray = _R_EQ_TO_GAL.T
 

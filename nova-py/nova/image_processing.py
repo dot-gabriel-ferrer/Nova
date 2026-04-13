@@ -542,8 +542,10 @@ def feature_align(
 
     Returns
     -------
-    ndarray
+    aligned : ndarray
         Transformed *target* image aligned to *reference*.
+    shift : tuple of float
+        Estimated (dy, dx) shift applied to align.
     """
     ndi = _import_scipy_ndimage()
     ref = np.asarray(reference, dtype=np.float64)
@@ -563,7 +565,7 @@ def feature_align(
 
     if len(ref_pts) < 3 or len(tgt_pts) < 3:
         # Not enough sources -- return target unchanged
-        return tgt.copy()
+        return tgt.copy(), (0.0, 0.0)
 
     # Limit to brightest sources for triangle matching speed
     cap = min(30, len(ref_pts), len(tgt_pts))
@@ -574,7 +576,7 @@ def feature_align(
     tgt_idx, tgt_desc = _triangle_hash(tgt_pts)
 
     if len(ref_desc) == 0 or len(tgt_desc) == 0:
-        return tgt.copy()
+        return tgt.copy(), (0.0, 0.0)
 
     # Match triangle descriptors via nearest-neighbor in 2-D descriptor space
     matched_ref = []
@@ -591,7 +593,7 @@ def feature_align(
                 matched_tgt.append(tgt_pts[si])
 
     if len(matched_ref) < 3:
-        return tgt.copy()
+        return tgt.copy(), (0.0, 0.0)
 
     matched_ref = np.array(matched_ref, dtype=np.float64)
     matched_tgt = np.array(matched_tgt, dtype=np.float64)
@@ -615,7 +617,7 @@ def feature_align(
     try:
         A_inv = np.linalg.inv(A_fwd)
     except np.linalg.LinAlgError:
-        return tgt.copy()
+        return tgt.copy(), (0.0, 0.0)
     t_inv = -A_inv @ t_fwd
 
     # scipy affine_transform: output[o] = sum_j matrix[o,j]*input_index[j] + offset[o]
@@ -631,7 +633,7 @@ def feature_align(
         tgt, matrix_rc, offset=offset_rc,
         output_shape=ref.shape, order=1, mode="constant", cval=np.nan,
     )
-    return aligned
+    return aligned, (float(t_fwd[1]), float(t_fwd[0]))
 
 
 def compute_shift(
@@ -950,11 +952,11 @@ def apply_flat(
     flat: np.ndarray,
     min_flat: float = 0.01,
 ) -> np.ndarray:
-    """Divide by a normalised flat-field image.
+    """Divide by a flat-field image.
 
-    The flat is normalised by its median before division.  Values below
-    *min_flat* (after normalisation) are clamped to *min_flat* to avoid
-    division by near-zero values.
+    Pixels in the flat below *min_flat* are clamped to *min_flat* to
+    avoid division by near-zero values.  The flat is **not** normalised
+    automatically; pass a pre-normalised flat if that is desired.
 
     Parameters
     ----------
@@ -963,7 +965,7 @@ def apply_flat(
     flat : ndarray
         Flat-field image (same shape as *data*).
     min_flat : float
-        Minimum allowed value in the normalised flat.
+        Minimum allowed value in the flat.
 
     Returns
     -------
@@ -972,12 +974,8 @@ def apply_flat(
     """
     data = np.asarray(data, dtype=np.float64)
     flat = np.asarray(flat, dtype=np.float64)
-    flat_median = np.nanmedian(flat)
-    if flat_median == 0 or not np.isfinite(flat_median):
-        flat_median = 1.0
-    norm_flat = flat / flat_median
-    norm_flat = np.where(norm_flat < min_flat, min_flat, norm_flat)
-    return data / norm_flat
+    safe_flat = np.where(flat < min_flat, min_flat, flat)
+    return data / safe_flat
 
 
 def subtract_dark(
@@ -1062,7 +1060,19 @@ def correct_overscan(
         else:
             oscan = data[overscan_region, :].astype(np.float64)
     elif isinstance(overscan_region, tuple):
-        oscan = data[overscan_region].astype(np.float64)
+        # If both elements are plain ints, treat as a (start, stop) range
+        # along *axis*.
+        if len(overscan_region) == 2 and all(
+            isinstance(v, (int, np.integer)) for v in overscan_region
+        ):
+            start, stop = overscan_region
+            s = slice(start, stop)
+            if axis == 1:
+                oscan = data[:, s].astype(np.float64)
+            else:
+                oscan = data[s, :].astype(np.float64)
+        else:
+            oscan = data[overscan_region].astype(np.float64)
     else:
         raise TypeError(
             "overscan_region must be ndarray, slice, or tuple of slices; "

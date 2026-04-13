@@ -492,10 +492,10 @@ class TestScaledIntegers:
 class TestVersion:
     """Test version bump."""
 
-    def test_version_is_0_2(self) -> None:
+    def test_version_is_current(self) -> None:
         import nova
-        assert nova.__version__ == "0.3.0"
-        assert NOVA_VERSION == "0.3.0"
+        assert nova.__version__ == "0.4.0"
+        assert NOVA_VERSION == "0.4.0"
 
 
 # --------------------------------------------------------------------------
