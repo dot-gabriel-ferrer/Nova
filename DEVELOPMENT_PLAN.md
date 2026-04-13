@@ -1,8 +1,8 @@
 # NOVA Development Plan -- From Prototype to FITS Replacement
 
 **Status:** Active Development
-**Version:** 0.3.0 -> 1.0.0 Roadmap
-**Updated:** 2026-04-12
+**Version:** 0.4.0 -> 1.0.0 Roadmap
+**Updated:** 2026-04-13
 
 ---
 
@@ -21,7 +21,7 @@ products. The goal is to provide a format that is:
 
 ---
 
-## Current State (v0.3.0)
+## Current State (v0.4.0)
 
 ### Completed
 
@@ -47,7 +47,12 @@ products. The goal is to provide a format that is:
 | Batch Migration | v0.3 | Directory conversion, parallel, verify, incremental |
 | Streaming | v0.3 | Append-mode writes, time-series ingest, buffered I/O |
 | Pipeline Adapters | v0.3 | CCDData, NDData, HDUList bidirectional adapters |
-| Test Suite | v0.3 | 292 tests across all modules and features |
+| Image Processing | v0.4 | PSF modelling, registration, subtraction, calibration |
+| Advanced Photometry | v0.4 | PSF fitting, extended source, calibration, crowded-field |
+| Advanced Spectral | v0.4 | Wavelength calib, sky subtraction, line fitting, echelle |
+| Coordinate Transforms | v0.4 | SIP, TPV, lookup distortion, frame transforms, cross-match |
+| Catalog Operations | v0.4 | Cross-matching, cone search, VOTable, SAMP |
+| Test Suite | v0.4 | 370 tests across all modules and features |
 | Constants | v0.3 | Centralised shared values (MAD_TO_STD, HASH_READ_SIZE, etc.) |
 | Tutorials | v0.3 | 7 scripts covering all features |
 | Notebooks | v0.1 | 5 interactive notebooks with visualization |
@@ -190,50 +195,50 @@ error handling.
 
 ---
 
-## Phase 3: Advanced Math and Analysis (v0.4.0)
+## Phase 3: Advanced Math and Analysis (v0.4.0) -- COMPLETE
 
 **Goal:** Make NOVA a complete analysis environment, reducing the need for external tools.
 
-### 3.1 Advanced Image Processing
+### 3.1 Advanced Image Processing [done]
 
-- [ ] PSF modelling (Moffat, multi-Gaussian)
-- [ ] Image registration/alignment (WCS-based and feature-based)
-- [ ] Image subtraction (Alard-Lupton method)
-- [ ] Flat-fielding and bias subtraction helpers
-- [ ] Bad pixel interpolation
-- [ ] Fringe correction for CCD images
+- [x] PSF modelling (Moffat, multi-Gaussian)
+- [x] Image registration/alignment (WCS-based and feature-based)
+- [x] Image subtraction (Alard-Lupton method)
+- [x] Flat-fielding and bias subtraction helpers
+- [x] Bad pixel interpolation
+- [x] Fringe correction for CCD images
 
-### 3.2 Advanced Photometry
+### 3.2 Advanced Photometry [done]
 
-- [ ] PSF photometry (simultaneous PSF fitting)
-- [ ] Extended source photometry (Petrosian, Kron, isophotal)
-- [ ] Photometric calibration helpers (zero-point, extinction)
-- [ ] Aperture corrections
-- [ ] Crowded-field photometry
+- [x] PSF photometry (simultaneous PSF fitting)
+- [x] Extended source photometry (Petrosian, Kron, isophotal)
+- [x] Photometric calibration helpers (zero-point, extinction)
+- [x] Aperture corrections
+- [x] Crowded-field photometry
 
-### 3.3 Advanced Spectral Tools
+### 3.3 Advanced Spectral Tools [done]
 
-- [ ] Wavelength calibration (arc lamp fitting)
-- [ ] Sky subtraction for spectra
-- [ ] Radial velocity measurement
-- [ ] Spectral classification helpers
-- [ ] Emission line fitting (Gaussian, Voigt profiles)
-- [ ] Multi-order echelle spectrum support
+- [x] Wavelength calibration (arc lamp fitting)
+- [x] Sky subtraction for spectra
+- [x] Radial velocity measurement
+- [x] Spectral classification helpers
+- [x] Emission line fitting (Gaussian, Voigt profiles)
+- [x] Multi-order echelle spectrum support
 
-### 3.4 Coordinate Transforms
+### 3.4 Coordinate Transforms [done]
 
-- [ ] Full SIP distortion support
-- [ ] TPV (tangent polynomial) distortion
-- [ ] Lookup table (IMAGE-type) distortion
-- [ ] Coordinate transformation between WCS frames
-- [ ] Astrometric solution verification (catalog cross-match)
+- [x] Full SIP distortion support
+- [x] TPV (tangent polynomial) distortion
+- [x] Lookup table (IMAGE-type) distortion
+- [x] Coordinate transformation between WCS frames
+- [x] Astrometric solution verification (catalog cross-match)
 
-### 3.5 Catalog Operations
+### 3.5 Catalog Operations [done]
 
-- [ ] Cross-matching between NOVA catalogs
-- [ ] Cone search (spatial queries)
-- [ ] VO Table (VOTable) import/export
-- [ ] SAMP integration (interoperability with other tools)
+- [x] Cross-matching between NOVA catalogs
+- [x] Cone search (spatial queries)
+- [x] VO Table (VOTable) import/export
+- [x] SAMP integration (interoperability with other tools)
 
 ---
 
@@ -394,6 +399,32 @@ This matrix tracks feature parity with FITS and its ecosystem tools:
 | Batch migration | Complete | Parallel, verify, incremental |
 | Time-series append | Complete | StreamWriter with buffering |
 
+### Advanced Analysis (v0.4)
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| PSF modelling | Complete | Moffat, multi-Gaussian, fitting |
+| Image registration | Complete | WCS-based and feature-based alignment |
+| Image subtraction | Complete | Scaled and Alard-Lupton methods |
+| CCD calibration | Complete | Bias, flat, dark, overscan, fringe |
+| Bad pixel handling | Complete | Interpolation, mask building |
+| PSF photometry | Complete | Simultaneous fitting, iterative subtraction |
+| Extended photometry | Complete | Petrosian, Kron, isophotal, radial profile |
+| Photometric calibration | Complete | Zero-point, extinction, color terms |
+| Crowded-field photometry | Complete | Neighbor finding, deblending, completeness |
+| Wavelength calibration | Complete | Arc lamp fitting, polynomial solution |
+| Sky subtraction | Complete | 1-D and 2-D methods |
+| Radial velocity | Complete | Cross-correlation, Doppler shift |
+| Emission line fitting | Complete | Gaussian, Voigt, multi-line |
+| Echelle support | Complete | Order tracing, extraction, merging |
+| SIP distortion | Complete | Forward, inverse, fitting |
+| TPV distortion | Complete | Full polynomial evaluation |
+| Lookup distortion | Complete | IMAGE-type correction tables |
+| Frame transforms | Complete | Galactic, ecliptic, precession |
+| Catalog cross-match | Complete | Nearest-neighbor, cone, box, polygon search |
+| VOTable support | Complete | Read, write, convert to/from NOVA |
+| SAMP integration | Complete | Client for tool interoperability |
+
 ---
 
 ## Pipeline Migration Guide
@@ -468,20 +499,14 @@ writer.close()
 
 ## Development Priorities (Next Steps)
 
-### Immediate (v0.4.0 -- Next Release)
-
-1. **PSF modelling** -- Moffat, multi-Gaussian
-2. **Image registration** -- WCS-based and feature-based
-3. **SIP distortion** -- Full WCS distortion support
-4. **Advanced photometry** -- PSF fitting, crowded fields
-
-### Short-term (v0.5.0)
+### Immediate (v0.5.0 -- Next Release)
 
 1. **Performance optimization** -- Cython/Numba acceleration
 2. **DASK backend** -- Parallel chunk processing
 3. **Large-scale support** -- >1 TB datasets
+4. **GPU acceleration** -- CuPy optional backend
 
-### Medium-term (v0.8.0)
+### Short-term (v0.8.0)
 
 1. **Language bindings** -- C, Julia, Rust
 2. **Viewer applications** -- Desktop and web

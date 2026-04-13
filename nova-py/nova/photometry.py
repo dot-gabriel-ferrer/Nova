@@ -817,7 +817,7 @@ def apply_zeropoint(
     inst_mags: np.ndarray,
     zeropoint: float,
     inst_mag_errs: np.ndarray | None = None,
-) -> dict[str, np.ndarray]:
+) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Apply a photometric zero-point to instrumental magnitudes.
 
     .. math::
@@ -836,18 +836,17 @@ def apply_zeropoint(
 
     Returns
     -------
-    dict
-        Keys: ``cal_mags`` and optionally ``cal_mag_errs``.
+    ndarray or tuple of ndarray
+        Calibrated magnitudes.  If *inst_mag_errs* is given, returns a
+        tuple ``(cal_mags, cal_mag_errs)``.
     """
     inst_mags = np.asarray(inst_mags, dtype=np.float64)
     cal_mags = inst_mags + zeropoint
 
-    result: dict[str, Any] = {"cal_mags": cal_mags}
-
     if inst_mag_errs is not None:
-        result["cal_mag_errs"] = np.asarray(inst_mag_errs, dtype=np.float64).copy()
+        return cal_mags, np.asarray(inst_mag_errs, dtype=np.float64).copy()
 
-    return result
+    return cal_mags
 
 
 def extinction_correct(

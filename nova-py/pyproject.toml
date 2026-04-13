@@ -56,8 +56,11 @@ plots = [
     "matplotlib>=3.7",
     "h5py>=3.0",
 ]
+analysis = [
+    "scipy>=1.10",
+]
 all = [
-    "nova-astro[cloud,notebooks,ml,plots]",
+    "nova-astro[cloud,notebooks,ml,plots,analysis]",
 ]
 
 [tool.pytest.ini_options]
