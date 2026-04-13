@@ -1,7 +1,7 @@
 # NOVA Development Plan -- From Prototype to FITS Replacement
 
 **Status:** Active Development
-**Version:** 0.4.0 -> 1.0.0 Roadmap
+**Version:** 0.5.0 -> 1.0.0 Roadmap
 **Updated:** 2026-04-13
 
 ---
@@ -21,7 +21,7 @@ products. The goal is to provide a format that is:
 
 ---
 
-## Current State (v0.4.0)
+## Current State (v0.5.0)
 
 ### Completed
 
@@ -56,6 +56,12 @@ products. The goal is to provide a format that is:
 | Constants | v0.3 | Centralised shared values (MAD_TO_STD, HASH_READ_SIZE, etc.) |
 | Tutorials | v0.3 | 7 scripts covering all features |
 | Notebooks | v0.1 | 5 interactive notebooks with visualization |
+| Pipeline Framework | v0.5 | Declarative pipelines with step logging, checksums, replay |
+| Native Operations | v0.5 | Tracked arithmetic, clipping, masking, normalization, combine |
+| Astrometry Pipeline | v0.5 | Centroid extraction, plate solving, proper motion, parallax |
+| Photometry Pipeline | v0.5 | Multi-aperture, zero-point, extinction, differential, growth curve |
+| Spectroscopy Pipeline | v0.5 | Optimal extraction, continuum, telluric, stacking, redshift, S/N |
+| Test Suite (Phase 4) | v0.5 | 454 tests across all modules |
 
 ---
 
@@ -242,11 +248,82 @@ error handling.
 
 ---
 
-## Phase 4: Performance and Scale (v0.5.0)
+## Phase 4a: Pipeline Framework and Native Tools (v0.5.0) -- COMPLETE
+
+**Goal:** Make NOVA a complete, self-contained replacement for FITS-based
+astronomical pipelines.  Every common astrometry, photometry, and
+spectroscopy workflow should be achievable using only native NOVA tools,
+with full provenance and change tracking built in.
+
+### 4a.1 Pipeline Framework [done]
+
+- [x] Declarative Pipeline class with ordered Steps
+- [x] Automatic logging of every step (timestamps, SHA-256 checksums, params)
+- [x] PipelineLog and StepLog dataclasses with full JSON serialization
+- [x] Pipeline definition save/load with function registry for replay
+- [x] Insert, remove, and list steps programmatically
+- [x] Input/output type validation at every step boundary
+
+### 4a.2 Native Data Operations with Change Tracking [done]
+
+- [x] OperationHistory -- append-only log of all data transformations
+- [x] OperationRecord -- immutable record with checksums and timestamps
+- [x] Tracked arithmetic: op_add, op_subtract, op_multiply, op_divide
+- [x] Safe division (zero-divisor handling)
+- [x] Tracked clipping (op_clip) and masking (op_mask_replace)
+- [x] Tracked normalization (min-max, z-score) via op_normalize
+- [x] Tracked rebinning (op_rebin) with shape validation
+- [x] Tracked combine (op_combine) with median/mean/sum methods
+- [x] Full JSON serialization/deserialization of operation history
+
+### 4a.3 Astrometry Pipeline Tools [done]
+
+- [x] Centroid extraction with background estimation and refinement
+- [x] Triangle-matching plate solver (no external dependencies)
+- [x] Gnomonic (tangent-plane) projection utilities
+- [x] Proper-motion correction between epochs
+- [x] Parallax correction for observer position
+- [x] Astrometric residual analysis (RMS, median, max)
+- [x] SIP distortion polynomial fitting from matched catalogs
+
+### 4a.4 Photometry Pipeline Tools [done]
+
+- [x] Multi-aperture photometry with Poisson + readnoise error propagation
+- [x] Sky estimation from annuli (median, MAD-based RMS)
+- [x] Photometric zero-point calibration with sigma clipping
+- [x] Atmospheric extinction correction (Bouguer's law)
+- [x] Color-term correction
+- [x] Limiting magnitude estimation
+- [x] Growth-curve analysis and aperture corrections
+- [x] Differential photometry for time-series / transit work
+- [x] Magnitude system conversions (AB <-> Vega, flux <-> mag)
+
+### 4a.5 Spectroscopy Pipeline Tools [done]
+
+- [x] Optimal extraction (Horne 1986 variance-weighted)
+- [x] Continuum fitting (Legendre polynomial, median filter, sigma-clip)
+- [x] Spectrum normalization by continuum
+- [x] Telluric absorption modelling and correction
+- [x] Spectral resampling (linear interpolation with NaN handling)
+- [x] Spectral stacking / co-addition (median, mean, weighted mean)
+- [x] Redshift measurement via cross-correlation
+- [x] Signal-to-noise estimation (DER_SNR and variance methods)
+- [x] Equivalent width and line flux with error propagation
+- [x] Spectral smoothing (boxcar and Gaussian kernels)
+
+### 4a.6 Code Audit Results [done]
+
+- [x] Full audit of all 23 modules (code quality, error handling, completeness)
+- [x] Version bump to 0.5.0 across constants.py, pyproject.toml
+- [x] 84 new tests for all Phase 4a modules (454 total tests passing)
+
+---
+
+## Phase 4b: Performance and Scale (v0.6.0)
 
 **Goal:** Optimise for production-scale astronomical pipelines.
 
-### 4.1 Performance Optimization
+### 4b.1 Performance Optimization
 
 - [ ] Cython/Numba acceleration for critical math operations
 - [ ] GPU-accelerated convolution and source detection (CuPy optional)
@@ -255,7 +332,7 @@ error handling.
 - [ ] Write-ahead logging for crash recovery
 - [ ] Benchmark suite with real survey data (SDSS, DES, LSST simulations)
 
-### 4.2 Large-Scale Data
+### 4b.2 Large-Scale Data
 
 - [ ] Support for >1 TB datasets
 - [ ] Hierarchical chunk indexing for very large stores
@@ -263,7 +340,7 @@ error handling.
 - [ ] Time-series cube support (data cubes with time axis)
 - [ ] Radio data cubes (RA, Dec, Freq, Stokes)
 
-### 4.3 Parallel Processing
+### 4b.3 Parallel Processing
 
 - [ ] DASK integration for parallel array operations
 - [ ] MPI-based parallel I/O for HPC clusters
@@ -385,6 +462,14 @@ This matrix tracks feature parity with FITS and its ecosystem tools:
 | SExtractor detect | nova.math detect | Module | Complete |
 | photutils aperture | nova.math aperture | Module | Complete |
 | swarp stack | nova.math stack | Module | Complete |
+| DAOPHOT PSF phot | nova.photometry | Module | Complete |
+| SCAMP plate solve | nova.astrometry | Module | Complete (v0.5) |
+| astrometry.net | nova.astrometry plate_solve | Module | Complete (v0.5) |
+| IRAF specred | nova.spectroscopy_pipeline | Module | Complete (v0.5) |
+| ccdproc pipeline | nova.pipeline | Module | Complete (v0.5) |
+| PyRAF combine | nova.operations op_combine | Module | Complete (v0.5) |
+| DAOFIND centroid | nova.astrometry extract_centroids | Module | Complete (v0.5) |
+| specutils continuum | nova.spectroscopy_pipeline fit_continuum | Module | Complete (v0.5) |
 
 ### Pipeline Integration (v0.3)
 
@@ -424,6 +509,34 @@ This matrix tracks feature parity with FITS and its ecosystem tools:
 | Catalog cross-match | Complete | Nearest-neighbor, cone, box, polygon search |
 | VOTable support | Complete | Read, write, convert to/from NOVA |
 | SAMP integration | Complete | Client for tool interoperability |
+
+### Pipeline and Operations (v0.5)
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| Pipeline framework | Complete | Declarative, step logging, checksums, JSON replay |
+| Native operations | Complete | Tracked add/sub/mul/div/clip/mask/norm/rebin/combine |
+| Operation history | Complete | Append-only log, full JSON serialization |
+| Centroid extraction | Complete | Background estimation, peak finding, refinement |
+| Plate solving | Complete | Triangle matching, no external solver needed |
+| Proper-motion correction | Complete | Epoch propagation, parallax correction |
+| Astrometric residuals | Complete | RMS, median, max residual analysis |
+| SIP fitting | Complete | Distortion polynomial from matched catalogs |
+| Multi-aperture photometry | Complete | Poisson + readnoise errors, sky annulus |
+| Zero-point calibration | Complete | Sigma-clipped median with error |
+| Extinction correction | Complete | Bouguer law, color terms |
+| Differential photometry | Complete | Time-series, ensemble comparison |
+| Magnitude conversions | Complete | AB <-> Vega, flux <-> mag |
+| Limiting magnitude | Complete | Sky noise + readnoise estimation |
+| Growth curve | Complete | Aperture correction from curve of growth |
+| Optimal extraction | Complete | Horne 1986 variance-weighted |
+| Continuum fitting | Complete | Legendre polynomial, median filter |
+| Telluric correction | Complete | Absorption model, division with floor |
+| Spectral stacking | Complete | Median, mean, weighted mean co-addition |
+| Redshift measurement | Complete | Cross-correlation with template |
+| Signal-to-noise | Complete | DER_SNR and variance methods |
+| Equivalent width | Complete | With error propagation |
+| Spectral smoothing | Complete | Boxcar and Gaussian kernels |
 
 ---
 
@@ -495,11 +608,48 @@ for frame in camera_stream():
 writer.close()
 ```
 
+### Step 5: Use Native Pipelines (v0.5+)
+
+```python
+# Build a complete reduction pipeline with tracking
+from nova.pipeline import Pipeline
+from nova.operations import OperationHistory, op_subtract, op_divide
+from nova.image_processing import subtract_bias, apply_flat
+
+# Declarative pipeline -- every step is logged
+pipe = Pipeline("ccd_reduction", metadata={"instrument": "WFC3"})
+pipe.add_step("bias", subtract_bias, master_bias=bias_frame)
+pipe.add_step("flat", apply_flat, master_flat=flat_frame)
+result = pipe.run(raw_data)
+print(pipe.log.to_json())  # full provenance with checksums
+
+# Or use tracked operations for finer control
+hist = OperationHistory()
+cal = op_subtract(raw_data, bias_frame, history=hist, label="bias")
+cal = op_divide(cal, flat_frame, history=hist, label="flat")
+print(hist.to_json())  # every operation recorded
+
+# Native astrometry -- no external solver needed
+from nova.astrometry import extract_centroids, plate_solve
+sources = extract_centroids(cal, fwhm=3.5, threshold=5.0)
+wcs = plate_solve(sources, catalog_radec, image_shape=cal.shape)
+
+# Native photometry pipeline
+from nova.photometry_pipeline import multi_aperture_photometry
+phot = multi_aperture_photometry(cal, sources, radii=[3, 5, 7],
+                                  gain=1.5, readnoise=10.0)
+
+# Native spectroscopy pipeline
+from nova.spectroscopy_pipeline import optimal_extract, fit_continuum
+spec = optimal_extract(spec_2d, trace, aperture_half=5)
+cont = fit_continuum(wavelength, spec["flux"], order=5)
+```
+
 ---
 
 ## Development Priorities (Next Steps)
 
-### Immediate (v0.5.0 -- Next Release)
+### Immediate (v0.6.0 -- Next Release)
 
 1. **Performance optimization** -- Cython/Numba acceleration
 2. **DASK backend** -- Parallel chunk processing
