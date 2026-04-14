@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nova-astro"
-version = "0.4.0"
+version = "0.5.0"
 description = "Reference implementation for the NOVA astronomical data format"
 readme = "README.md"
 license = {text = "MIT"}

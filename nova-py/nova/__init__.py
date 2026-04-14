@@ -27,6 +27,20 @@ from nova.remote import open_remote, is_remote_url
 from nova.migrate import migrate_directory, MigrationReport
 from nova.streaming import StreamWriter, open_appendable, append_frame
 from nova.adapters import to_ccddata, from_ccddata, to_nddata, nova_to_hdulist
+from nova.pipeline import Pipeline, Step, PipelineLog, StepLog
+from nova.operations import (
+    OperationHistory,
+    OperationRecord,
+    op_add,
+    op_subtract,
+    op_multiply,
+    op_divide,
+    op_clip,
+    op_mask_replace,
+    op_normalize,
+    op_rebin,
+    op_combine,
+)
 from nova import constants as constants
 from nova import math as math
 from nova import visualization as viz
@@ -35,6 +49,11 @@ from nova import photometry as photometry
 from nova import spectral as spectral
 from nova import coords as coords
 from nova import catalog as catalog
+from nova import pipeline as pipeline
+from nova import operations as operations
+from nova import astrometry as astrometry
+from nova import photometry_pipeline as photometry_pipeline
+from nova import spectroscopy_pipeline as spectroscopy_pipeline
 
 # Convenience aliases matching README examples
 open = open_dataset
@@ -92,6 +111,23 @@ __all__ = [
     "from_ccddata",
     "to_nddata",
     "nova_to_hdulist",
+    # Pipeline framework (Phase 4)
+    "Pipeline",
+    "Step",
+    "PipelineLog",
+    "StepLog",
+    # Native operations with tracking (Phase 4)
+    "OperationHistory",
+    "OperationRecord",
+    "op_add",
+    "op_subtract",
+    "op_multiply",
+    "op_divide",
+    "op_clip",
+    "op_mask_replace",
+    "op_normalize",
+    "op_rebin",
+    "op_combine",
     # Math (integrated mathematical tools)
     "math",
     # Visualization
@@ -104,4 +140,10 @@ __all__ = [
     "spectral",
     "coords",
     "catalog",
+    # Phase 4: Pipeline tools
+    "pipeline",
+    "operations",
+    "astrometry",
+    "photometry_pipeline",
+    "spectroscopy_pipeline",
 ]

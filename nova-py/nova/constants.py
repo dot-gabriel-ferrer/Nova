@@ -11,7 +11,7 @@ from __future__ import annotations
 #  Format identity
 # ---------------------------------------------------------------------------
 
-NOVA_VERSION: str = "0.4.0"
+NOVA_VERSION: str = "0.5.0"
 """Current NOVA format + library version string."""
 
 NOVA_CONTEXT: str = "https://nova-astro.org/v0.1/context.jsonld"
