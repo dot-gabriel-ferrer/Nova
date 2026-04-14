@@ -136,14 +136,14 @@ Findings:
 
 | ID | Item | Status | Notes |
 |----|------|--------|-------|
-| C-1 | README.md says "292 tests" -- actual count is 454 | outdated | lines 5, 121, 400, 407 |
-| C-2 | README.md module table does not list Phase 3/4 modules | outdated | missing 10+ modules |
-| C-3 | README.md strategic roadmap says "[next] v0.5" -- already done | outdated | line 410 |
+| C-1 | README.md says "292 tests" -- actual count is 454 | fixed (v0.5.1) | updated in this audit |
+| C-2 | README.md module table does not list Phase 3/4 modules | fixed (v0.5.1) | added 11 modules |
+| C-3 | README.md strategic roadmap says "[next] v0.5" -- already done | fixed (v0.5.1) | updated roadmap |
 | C-4 | Spec v0.3 does not cover pipeline framework (Phase 4a) | gap | needs spec v0.4 or v0.5 |
 | C-5 | Spec v0.3 does not cover native operations (Phase 4a) | gap | needs spec section |
 | C-6 | Spec v0.3 does not cover astrometry/photometry/spectroscopy pipelines | gap | Phase 4 not specified |
 | C-7 | No CI/CD pipeline (.github/workflows/) | missing | no automated testing |
-| C-8 | pyproject.toml missing [project.urls] | incomplete | no homepage/repo/docs URLs |
+| C-8 | pyproject.toml missing [project.urls] | fixed (v0.5.1) | added in this audit |
 
 #### High (needed for v0.8-v1.0)
 
@@ -486,20 +486,20 @@ with full provenance and change tracking built in.
 project files, update the specification, and ensure the project is ready
 for external contributors.
 
-### 4c.1 README.md Update [todo]
+### 4c.1 README.md Update [done]
 
-- [ ] Update test count from 292 to 454 (lines 5, 121, 400, 407)
-- [ ] Add Phase 3 modules to implementation status table (image_processing, photometry, spectral, coords, catalog)
-- [ ] Add Phase 4 modules to implementation status table (pipeline, operations, astrometry, photometry_pipeline, spectroscopy_pipeline)
-- [ ] Update strategic roadmap (v0.5 is done, not "[next]")
-- [ ] Update repository structure tree (missing 10+ modules)
+- [x] Update test count from 292 to 454
+- [x] Add Phase 3 modules to implementation status table (image_processing, photometry, spectral, coords, catalog)
+- [x] Add Phase 4 modules to implementation status table (pipeline, operations, astrometry, photometry_pipeline, spectroscopy_pipeline)
+- [x] Update strategic roadmap (v0.5 is done, not "[next]")
+- [x] Update repository structure tree (added all 29 modules)
 - [ ] Add installation instructions for [analysis] extra (scipy)
 
-### 4c.2 pyproject.toml Improvements [todo]
+### 4c.2 pyproject.toml Improvements [done]
 
-- [ ] Add [project.urls] section (Homepage, Repository, Documentation, Issues)
+- [x] Add [project.urls] section (Homepage, Repository, Issues)
 - [ ] Add Python 3.13 to classifiers if supported
-- [ ] Update Development Status classifier (3 - Alpha or higher)
+- [x] Update Development Status classifier (3 - Alpha)
 
 ### 4c.3 Project Community Files [todo]
 
