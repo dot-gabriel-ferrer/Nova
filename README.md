@@ -2,7 +2,7 @@
 
 A cloud-native scientific data format for professional astronomy, designed to succeed FITS.
 
-License: MIT | Spec: v0.3 (Draft) | Python 3.10+ | Tests: 292 passed
+License: MIT | Spec: v0.3 (Draft) | Python 3.10+ | Tests: 454 passed
 
 ---
 
@@ -92,15 +92,11 @@ Overall NOVA advantages over FITS at 2048x2048 resolution:
 Nova/
     spec/                            # Format specification
         nova-spec-v0.3.md            # Full specification document (v0.3)
-        schemas/                     # JSON Schemas
-            wcs.schema.json
-            nova-metadata.schema.json
-            provenance.schema.json
-            extensions.schema.json   # Multi-extension schema
-            tables.schema.json       # Table data schema
+        schemas/                     # JSON Schemas (5 files)
         examples/                    # Example JSON-LD documents
     nova-py/                         # Python reference implementation
-        nova/
+        nova/                        # 29 modules, 202 functions, 26 classes
+            constants.py             # Shared constants (versions, thresholds)
             container.py             # Zarr v3 container, MEF, tables
             wcs.py                   # WCS JSON-LD handling
             fits_converter.py        # FITS<->NOVA converter (MEF support)
@@ -118,13 +114,23 @@ Nova/
             migrate.py               # Batch FITS->NOVA migration
             streaming.py             # Append-mode streaming writes
             adapters.py              # Pipeline adapters (CCDData, etc.)
-        tests/                       # 292 tests
-        tutorials/                   # Step-by-step tutorials
+            image_processing.py      # PSF, registration, subtraction (v0.4)
+            photometry.py            # PSF fitting, extended source (v0.4)
+            spectral.py              # Wavelength calib, line fitting (v0.4)
+            coords.py                # SIP, TPV, frame transforms (v0.4)
+            catalog.py               # Cross-match, cone search, VOTable (v0.4)
+            pipeline.py              # Declarative pipeline framework (v0.5)
+            operations.py            # Tracked arithmetic and combine (v0.5)
+            astrometry.py            # Centroid extraction, plate solving (v0.5)
+            photometry_pipeline.py   # Multi-aperture, zero-point (v0.5)
+            spectroscopy_pipeline.py # Optimal extraction, continuum (v0.5)
+        tests/                       # 454 tests (18 test files)
+        tutorials/                   # 7 step-by-step tutorials
         examples/
-    notebooks/                       # Jupyter notebooks (5 interactive)
+    notebooks/                       # 5 Jupyter notebooks
     docs/
         benchmarks/                  # Generated performance plots
-    DEVELOPMENT_PLAN.md              # Full roadmap to v1.0
+    DEVELOPMENT_PLAN.md              # Full roadmap to v1.0 (with audit)
     README.md
 ```
 
@@ -394,22 +400,38 @@ See the full specification: [NOVA Format Specification v0.3 (Draft)](spec/nova-s
 | `migrate.py` | Complete (v0.3) | 6 | Batch directory migration |
 | `streaming.py` | Complete (v0.3) | 6 | Append-mode time-series ingest |
 | `adapters.py` | Complete (v0.3) | 6 | CCDData, NDData, HDUList adapters |
+| `constants.py` | Complete (v0.3) | 22 | Centralised shared values |
+| `image_processing.py` | Complete (v0.4) | 66* | PSF, registration, subtraction, calibration |
+| `photometry.py` | Complete (v0.4) | 66* | PSF fitting, extended source, crowded-field |
+| `spectral.py` | Complete (v0.4) | 66* | Wavelength calib, sky subtraction, line fitting |
+| `coords.py` | Complete (v0.4) | 66* | SIP, TPV, lookup distortion, frame transforms |
+| `catalog.py` | Complete (v0.4) | 66* | Cross-match, cone search, VOTable, SAMP |
+| `pipeline.py` | Complete (v0.5) | 84* | Declarative pipelines with step logging |
+| `operations.py` | Complete (v0.5) | 84* | Tracked arithmetic, clipping, combine |
+| `astrometry.py` | Complete (v0.5) | 84* | Centroid extraction, plate solving |
+| `photometry_pipeline.py` | Complete (v0.5) | 84* | Multi-aperture, zero-point, extinction |
+| `spectroscopy_pipeline.py` | Complete (v0.5) | 84* | Optimal extraction, continuum, telluric |
 | *Real image tests* | Complete | 17 | Full pipeline with realistic data |
 | *Phase 1 tests* | Complete (v0.2) | 37 | MEF, tables, dtypes, scaling |
 
-**Total: 292 tests passing**
+*Phase 3 modules share 66 tests in test_phase3.py; Phase 4 modules share 84 tests in test_phase4.py.
+
+**Total: 454 tests passing (29 modules, 202 public functions, 26 public classes)**
 
 ## Strategic Roadmap
 
 1. [done] Solid specification (v0.3 draft)
 2. [done] Python reference implementation (nova-py -- all 7 design invariants)
 3. [done] Integrated math and visualization tools
-4. [done] Comprehensive test suite with real astronomical data (292 tests)
-5. [done] Multi-extension FITS support, table data, all data types (v0.2)
-6. [done] Remote access (HTTP/S3), batch migration, streaming, pipeline adapters (v0.3)
-7. [next] Performance optimization and large-scale support (v0.5)
-8. [next] IVOA endorsement and ecosystem (v0.8)
-9. [next] Formal standardization (v1.0)
+4. [done] Multi-extension FITS support, table data, all data types (v0.2)
+5. [done] Remote access (HTTP/S3), batch migration, streaming, pipeline adapters (v0.3)
+6. [done] Advanced analysis: image processing, photometry, spectral, coords, catalog (v0.4)
+7. [done] Pipeline framework, native operations, astrometry/photometry/spectroscopy pipelines (v0.5)
+8. [done] Comprehensive test suite with real astronomical data (454 tests)
+9. [next] Documentation, CI/CD, spec update, community files (v0.5.1)
+10. [next] Performance optimization and large-scale support (v0.6)
+11. [next] IVOA endorsement and ecosystem (v0.8)
+12. [next] Formal standardization (v1.0)
 
 Full Development Plan: [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)
 

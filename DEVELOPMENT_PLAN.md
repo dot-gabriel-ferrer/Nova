@@ -2,7 +2,8 @@
 
 **Status:** Active Development
 **Version:** 0.5.0 -> 1.0.0 Roadmap
-**Updated:** 2026-04-13
+**Updated:** 2026-04-14
+**Last Audit:** 2026-04-14 (comprehensive, all modules)
 
 ---
 
@@ -62,6 +63,166 @@ products. The goal is to provide a format that is:
 | Photometry Pipeline | v0.5 | Multi-aperture, zero-point, extinction, differential, growth curve |
 | Spectroscopy Pipeline | v0.5 | Optimal extraction, continuum, telluric, stacking, redshift, S/N |
 | Test Suite (Phase 4) | v0.5 | 454 tests across all modules |
+
+---
+
+## Comprehensive Audit (2026-04-14)
+
+Full audit of the codebase at v0.5.0.  This section documents what exists,
+what is missing, and what needs work before reaching v1.0.
+
+### Audit Summary
+
+| Metric | Value |
+|--------|-------|
+| Python modules | 29 (28 + __init__.py) |
+| Public functions | 202 |
+| Public classes | 26 |
+| Lines of code (nova/) | 18,357 |
+| Lines of tests (tests/) | 5,394 |
+| Tests | 454 (all passing) |
+| Spec (nova-spec-v0.3.md) | 754 lines |
+| JSON schemas | 5 |
+| Tutorials | 7 scripts |
+| Notebooks | 5 interactive |
+| Benchmark plots | 4 PNG files |
+
+### Code Quality Audit (per-module)
+
+| Module | Funcs | Classes | Docstrings | Type Hints | Errors | Score |
+|--------|-------|---------|------------|------------|--------|-------|
+| constants.py | 0 | 0 | yes | n/a | clean | 10/10 |
+| container.py | 2 | 3 | yes | yes | clean | 9/10 |
+| wcs.py | 0 | 5 | yes | yes | clean | 10/10 |
+| fits_converter.py | 2 | 0 | yes | yes | clean | 10/10 |
+| provenance.py | 0 | 4 | yes | partial | clean | 8/10 |
+| integrity.py | 4 | 0 | yes | yes | clean | 10/10 |
+| validation.py | 4 | 0 | yes | yes | clean | 10/10 |
+| ml.py | 6 | 1 | yes | yes | clean | 9/10 |
+| math.py | 16 | 0 | yes | yes | clean | 8/10 |
+| visualization.py | 8 | 0 | yes | yes | clean | 7/10 |
+| benchmarks.py | 17 | 2 | yes | yes | clean | 9/10 |
+| fast_io.py | 3 | 0 | yes | yes | clean | 10/10 |
+| cli.py | 1 | 0 | yes | yes | clean | 10/10 |
+| plots.py | 1 | 0 | yes | yes | clean | 8/10 |
+| remote.py | 2 | 1 | yes | yes | clean | 10/10 |
+| migrate.py | 2 | 2 | yes | yes | clean | 9/10 |
+| streaming.py | 2 | 1 | yes | partial | clean | 8/10 |
+| adapters.py | 4 | 0 | yes | yes | clean | 10/10 |
+| image_processing.py | 19 | 0 | yes | yes | clean | 8/10 |
+| photometry.py | 15 | 0 | yes | yes | clean | 9/10 |
+| spectral.py | 20 | 0 | yes | yes | clean | 9/10 |
+| coords.py | 22 | 0 | yes | yes | clean | 9/10 |
+| catalog.py | 14 | 1 | yes | yes | clean | 9/10 |
+| pipeline.py | 0 | 4 | yes | yes | clean | 10/10 |
+| operations.py | 9 | 2 | yes | yes | clean | 9/10 |
+| astrometry.py | 6 | 0 | yes | yes | clean | 9/10 |
+| photometry_pipeline.py | 12 | 0 | yes | yes | clean | 10/10 |
+| spectroscopy_pipeline.py | 11 | 0 | yes | yes | clean | 9/10 |
+
+Overall code quality: 9.2/10
+
+Findings:
+- 100% module-level docstrings
+- 100% public function docstrings
+- 0 bare except clauses
+- 0 TODO/FIXME/HACK comments
+- 0 magic numbers outside constants.py (audit A.1 was thorough)
+- Type hints present on 26/29 modules (missing on __init__.py, constants.py, provenance.py)
+
+### What is MISSING to reach v1.0
+
+#### Critical (blocks release)
+
+| ID | Item | Status | Notes |
+|----|------|--------|-------|
+| C-1 | README.md says "292 tests" -- actual count is 454 | outdated | lines 5, 121, 400, 407 |
+| C-2 | README.md module table does not list Phase 3/4 modules | outdated | missing 10+ modules |
+| C-3 | README.md strategic roadmap says "[next] v0.5" -- already done | outdated | line 410 |
+| C-4 | Spec v0.3 does not cover pipeline framework (Phase 4a) | gap | needs spec v0.4 or v0.5 |
+| C-5 | Spec v0.3 does not cover native operations (Phase 4a) | gap | needs spec section |
+| C-6 | Spec v0.3 does not cover astrometry/photometry/spectroscopy pipelines | gap | Phase 4 not specified |
+| C-7 | No CI/CD pipeline (.github/workflows/) | missing | no automated testing |
+| C-8 | pyproject.toml missing [project.urls] | incomplete | no homepage/repo/docs URLs |
+
+#### High (needed for v0.8-v1.0)
+
+| ID | Item | Status | Notes |
+|----|------|--------|-------|
+| H-1 | CHANGELOG.md does not exist | missing | no release history |
+| H-2 | CONTRIBUTING.md does not exist | missing | no contributor guide |
+| H-3 | CODE_OF_CONDUCT.md does not exist | missing | no community standards |
+| H-4 | No tutorials for Phase 4 features (pipelines, operations) | missing | 7 tutorials only cover up to Phase 2 |
+| H-5 | No notebooks for Phase 3/4 features | missing | 5 notebooks cover up to Phase 2 |
+| H-6 | No API reference docs (Sphinx/ReadTheDocs) | missing | only README + tutorials |
+| H-7 | No test coverage report configured | missing | pytest-cov in deps but no config |
+| H-8 | provenance.py missing type hints on class attributes | partial | needs annotations |
+| H-9 | streaming.py missing type hints on some methods | partial | needs annotations |
+| H-10 | LZ4 compression codec (deferred from Phase 1) | deferred | Zarr codec registration needed |
+| H-11 | DASK array backend (deferred from Phase 2) | deferred | parallel chunk processing |
+| H-12 | ccdproc/photutils/specutils integration tests | deferred | external lib compatibility |
+
+#### Medium (nice to have for v1.0)
+
+| ID | Item | Status | Notes |
+|----|------|--------|-------|
+| M-1 | visualization.py has hardcoded color strings | minor | could be constants |
+| M-2 | plots.py has hardcoded color strings | minor | cosmetic |
+| M-3 | No migration guide document (only CLI examples) | missing | "Moving from FITS to NOVA" |
+| M-4 | No example pipelines for real instruments (HST, JWST, etc.) | missing | planned for Phase 5 |
+| M-5 | WebSocket streaming support (deferred from Phase 2) | deferred | low priority |
+| M-6 | Rice compression compatibility | deferred | low priority |
+| M-7 | JPEG-XL lossy compression for previews | deferred | low priority |
+
+### Phase Completion Contrast
+
+This table compares the plan versus actual implementation:
+
+| Phase | Plan Version | Planned Items | Done | Deferred | Completion |
+|-------|-------------|---------------|------|----------|------------|
+| Phase 1 | v0.2.0 | 20 items | 17 | 3 (LZ4, JPEG-XL, Rice) | 85% |
+| Audit A | v0.3.1 | 10 items | 10 | 0 | 100% |
+| Phase 2 | v0.3.0 | 18 items | 14 | 4 (ccdproc, photutils, specutils, DASK) | 78% |
+| Phase 3 | v0.4.0 | 20 items | 20 | 0 | 100% |
+| Phase 4a | v0.5.0 | 38 items | 38 | 0 | 100% |
+| Phase 4b | v0.6.0 | 14 items | 0 | 14 | 0% |
+| Phase 5 | v0.8.0 | 19 items | 0 | 19 | 0% |
+| Phase 6 | v1.0.0 | 12 items | 0 | 12 | 0% |
+| **Total** | | **151 items** | **99** | **52** | **66%** |
+
+### Test Coverage by Module
+
+| Test File | Tests | Covers |
+|-----------|-------|--------|
+| test_container.py | 7 | container.py core |
+| test_wcs.py | 14 | wcs.py |
+| test_fits_converter.py | 4 | fits_converter.py |
+| test_provenance.py | 8 | provenance.py |
+| test_integrity.py | 8 | integrity.py |
+| test_validation.py | 19 | validation.py |
+| test_ml.py | 18 | ml.py |
+| test_math.py | 49 | math.py |
+| test_visualization.py | 18 | visualization.py |
+| test_benchmarks.py | 18 | benchmarks.py |
+| test_fast_io.py | 12 | fast_io.py |
+| test_cli.py | 11 | cli.py |
+| test_audit.py | 22 | constants.py, input validation |
+| test_real_images.py | 17 | integration (full pipeline) |
+| test_phase1.py | 37 | MEF, tables, data types |
+| test_phase2.py | 42 | remote, migrate, streaming, adapters |
+| test_phase3.py | 66 | image_processing, photometry, spectral, coords, catalog |
+| test_phase4.py | 84 | pipeline, operations, astrometry, phot/spec pipelines |
+| **Total** | **454** | **all 29 modules** |
+
+Modules with weakest test coverage (by ratio):
+- fits_converter.py: 4 tests (but also tested via test_phase1.py)
+- container.py: 7 tests (but also tested via test_phase1.py)
+- provenance.py: 8 tests
+
+Modules with strongest test coverage:
+- pipeline/operations/astrometry/pipelines: 84 tests (test_phase4.py)
+- image_processing/photometry/spectral/coords/catalog: 66 tests (test_phase3.py)
+- math.py: 49 tests
 
 ---
 
@@ -316,6 +477,81 @@ with full provenance and change tracking built in.
 - [x] Full audit of all 23 modules (code quality, error handling, completeness)
 - [x] Version bump to 0.5.0 across constants.py, pyproject.toml
 - [x] 84 new tests for all Phase 4a modules (454 total tests passing)
+
+---
+
+## Phase 4c: Documentation and Project Hygiene (v0.5.1)
+
+**Goal:** Fix all discrepancies found in the 2026-04-14 audit, add missing
+project files, update the specification, and ensure the project is ready
+for external contributors.
+
+### 4c.1 README.md Update [todo]
+
+- [ ] Update test count from 292 to 454 (lines 5, 121, 400, 407)
+- [ ] Add Phase 3 modules to implementation status table (image_processing, photometry, spectral, coords, catalog)
+- [ ] Add Phase 4 modules to implementation status table (pipeline, operations, astrometry, photometry_pipeline, spectroscopy_pipeline)
+- [ ] Update strategic roadmap (v0.5 is done, not "[next]")
+- [ ] Update repository structure tree (missing 10+ modules)
+- [ ] Add installation instructions for [analysis] extra (scipy)
+
+### 4c.2 pyproject.toml Improvements [todo]
+
+- [ ] Add [project.urls] section (Homepage, Repository, Documentation, Issues)
+- [ ] Add Python 3.13 to classifiers if supported
+- [ ] Update Development Status classifier (3 - Alpha or higher)
+
+### 4c.3 Project Community Files [todo]
+
+- [ ] Create CHANGELOG.md with release history (v0.1.0 through v0.5.0)
+- [ ] Create CONTRIBUTING.md with development setup and guidelines
+- [ ] Create CODE_OF_CONDUCT.md (Contributor Covenant or equivalent)
+
+### 4c.4 CI/CD Pipeline [todo]
+
+- [ ] Create .github/workflows/tests.yml (pytest on push/PR, Python 3.10-3.12)
+- [ ] Create .github/workflows/lint.yml (optional: ruff or flake8)
+- [ ] Add test coverage reporting (pytest-cov, upload to codecov or similar)
+- [ ] Add badge to README for CI status and coverage
+
+### 4c.5 Specification Update [todo]
+
+- [ ] Create spec/nova-spec-v0.5.md (or update v0.3 to v0.5)
+- [ ] Add section for Pipeline Framework (pipeline.py, operations.py)
+- [ ] Add section for Astrometry Pipeline (astrometry.py)
+- [ ] Add section for Photometry Pipeline (photometry_pipeline.py)
+- [ ] Add section for Spectroscopy Pipeline (spectroscopy_pipeline.py)
+- [ ] Add section for Native Operations with change tracking
+- [ ] Add section for Advanced Image Processing (image_processing.py)
+- [ ] Add section for Advanced Photometry (photometry.py)
+- [ ] Add section for Advanced Spectral Analysis (spectral.py)
+- [ ] Add section for Coordinate Transforms (coords.py)
+- [ ] Add section for Catalog Operations (catalog.py)
+
+### 4c.6 Tutorials and Notebooks [todo]
+
+- [ ] Create tutorial 08_pipeline_framework.py (Pipeline, Steps, logging)
+- [ ] Create tutorial 09_native_operations.py (tracked arithmetic, combine)
+- [ ] Create tutorial 10_astrometry.py (centroid extraction, plate solving)
+- [ ] Create tutorial 11_photometry_pipeline.py (multi-aperture, calibration)
+- [ ] Create tutorial 12_spectroscopy_pipeline.py (extraction, continuum, telluric)
+- [ ] Create notebook 06_Pipeline_and_Operations.ipynb
+- [ ] Create notebook 07_Astrometry_and_Photometry.ipynb
+
+### 4c.7 Type Hints and Code Polish [todo]
+
+- [ ] Add full type hints to provenance.py class attributes
+- [ ] Add full type hints to streaming.py methods
+- [ ] Add py.typed marker file for PEP 561 compliance
+- [ ] Run mypy --strict on all modules and fix issues (optional)
+
+### 4c.8 Test Improvements [todo]
+
+- [ ] Add pytest-cov configuration to pyproject.toml
+- [ ] Generate coverage report and identify gaps below 80%
+- [ ] Add edge case tests for fits_converter.py (currently only 4 direct tests)
+- [ ] Add edge case tests for container.py (currently only 7 direct tests)
+- [ ] Add property-based tests for math operations (hypothesis, optional)
 
 ---
 
@@ -649,20 +885,30 @@ cont = fit_continuum(wavelength, spec["flux"], order=5)
 
 ## Development Priorities (Next Steps)
 
-### Immediate (v0.6.0 -- Next Release)
+### Immediate (v0.5.1 -- Documentation and Hygiene)
+
+1. **README update** -- Fix test counts, add Phase 3/4 modules, update roadmap
+2. **pyproject.toml** -- Add project URLs, update classifiers
+3. **Community files** -- CHANGELOG.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md
+4. **CI/CD** -- GitHub Actions for tests, optional lint, coverage
+5. **Specification** -- Update to v0.5 covering pipeline and analysis modules
+
+### Near-term (v0.6.0 -- Performance)
 
 1. **Performance optimization** -- Cython/Numba acceleration
 2. **DASK backend** -- Parallel chunk processing
 3. **Large-scale support** -- >1 TB datasets
 4. **GPU acceleration** -- CuPy optional backend
+5. **Tutorials and notebooks** -- Cover Phase 3/4 features
 
-### Short-term (v0.8.0)
+### Short-term (v0.8.0 -- Ecosystem)
 
 1. **Language bindings** -- C, Julia, Rust
 2. **Viewer applications** -- Desktop and web
 3. **Archive integration** -- IVOA TAP, SODA
+4. **API documentation** -- Sphinx/ReadTheDocs auto-generated
 
-### Long-term (v1.0.0)
+### Long-term (v1.0.0 -- Standardization)
 
 1. **IVOA standardization** -- Formal recommendation
 2. **Survey pipeline integration** -- Rubin LSST, SKA
