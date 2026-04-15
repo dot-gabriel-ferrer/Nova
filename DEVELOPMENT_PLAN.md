@@ -530,11 +530,11 @@ for external contributors.
 
 ### 4c.6 Tutorials and Notebooks [todo]
 
-- [ ] Create tutorial 08_pipeline_framework.py (Pipeline, Steps, logging)
-- [ ] Create tutorial 09_native_operations.py (tracked arithmetic, combine)
-- [ ] Create tutorial 10_astrometry.py (centroid extraction, plate solving)
-- [ ] Create tutorial 11_photometry_pipeline.py (multi-aperture, calibration)
-- [ ] Create tutorial 12_spectroscopy_pipeline.py (extraction, continuum, telluric)
+- [x] Create tutorial 08_pipeline_framework.py (Pipeline, Steps, logging)
+- [x] Create tutorial 09_native_operations.py (tracked arithmetic, combine)
+- [x] Create tutorial 10_astrometry.py (centroid extraction, plate solving)
+- [x] Create tutorial 11_photometry_pipeline.py (multi-aperture, calibration)
+- [x] Create tutorial 12_spectroscopy_pipeline.py (extraction, continuum, telluric)
 - [ ] Create notebook 06_Pipeline_and_Operations.ipynb
 - [ ] Create notebook 07_Astrometry_and_Photometry.ipynb
 

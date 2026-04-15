@@ -85,13 +85,6 @@ def main() -> None:
 
     print(f"  Sources measured: {len(phot['x'])}")
     print(f"  Columns: {sorted(phot.keys())[:8]}...")
-    for r in radii:
-        key = f"mag_{r:.0f}" if f"mag_{r:.0f}" in phot else f"mag_{r}"
-        if key not in phot:
-            key = [k for k in phot if k.startswith("mag_")][0]
-        fluxkey = f"flux_{r:.0f}" if f"flux_{r:.0f}" in phot else f"flux_{r}"
-        if fluxkey not in phot:
-            fluxkey = [k for k in phot if k.startswith("flux_")][0]
     # Show results for smallest and largest aperture
     r_small, r_large = radii[0], radii[-1]
     ks = f"flux_{r_small:.0f}" if f"flux_{r_small:.0f}" in phot else f"flux_{r_small}"
