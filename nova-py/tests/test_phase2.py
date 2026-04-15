@@ -368,5 +368,5 @@ class TestCLIMigrate:
 class TestVersion:
     def test_version_is_current(self) -> None:
         import nova
-        assert nova.__version__ == "0.5.0"
-        assert NOVA_VERSION == "0.5.0"
+        assert nova.__version__ == "1.0.0"
+        assert NOVA_VERSION == "1.0.0"

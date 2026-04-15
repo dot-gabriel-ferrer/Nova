@@ -2,7 +2,7 @@
 
 A cloud-native scientific data format for professional astronomy, designed to succeed FITS.
 
-License: MIT | Spec: v0.3 (Draft) | Python 3.10+ | Tests: 454 passed
+License: MIT | Spec: v1.0 (RC) | Python 3.10+ | Tests: 454 passed
 
 ---
 
@@ -91,11 +91,13 @@ Overall NOVA advantages over FITS at 2048x2048 resolution:
 ```
 Nova/
     spec/                            # Format specification
-        nova-spec-v0.3.md            # Full specification document (v0.3)
+        nova-spec-v1.0.md            # Full specification document (v1.0 RC)
+        nova-spec-v0.3.md            # Previous specification (v0.3)
         schemas/                     # JSON Schemas (5 files)
         examples/                    # Example JSON-LD documents
     nova-py/                         # Python reference implementation
         nova/                        # 29 modules, 202 functions, 26 classes
+            py.typed                 # PEP 561 type hint marker
             constants.py             # Shared constants (versions, thresholds)
             container.py             # Zarr v3 container, MEF, tables
             wcs.py                   # WCS JSON-LD handling
@@ -114,23 +116,27 @@ Nova/
             migrate.py               # Batch FITS->NOVA migration
             streaming.py             # Append-mode streaming writes
             adapters.py              # Pipeline adapters (CCDData, etc.)
-            image_processing.py      # PSF, registration, subtraction (v0.4)
-            photometry.py            # PSF fitting, extended source (v0.4)
-            spectral.py              # Wavelength calib, line fitting (v0.4)
-            coords.py                # SIP, TPV, frame transforms (v0.4)
-            catalog.py               # Cross-match, cone search, VOTable (v0.4)
-            pipeline.py              # Declarative pipeline framework (v0.5)
-            operations.py            # Tracked arithmetic and combine (v0.5)
-            astrometry.py            # Centroid extraction, plate solving (v0.5)
-            photometry_pipeline.py   # Multi-aperture, zero-point (v0.5)
-            spectroscopy_pipeline.py # Optimal extraction, continuum (v0.5)
+            image_processing.py      # PSF, registration, subtraction
+            photometry.py            # PSF fitting, extended source
+            spectral.py              # Wavelength calib, line fitting
+            coords.py                # SIP, TPV, frame transforms
+            catalog.py               # Cross-match, cone search, VOTable
+            pipeline.py              # Declarative pipeline framework
+            operations.py            # Tracked arithmetic and combine
+            astrometry.py            # Centroid extraction, plate solving
+            photometry_pipeline.py   # Multi-aperture, zero-point
+            spectroscopy_pipeline.py # Optimal extraction, continuum
         tests/                       # 454 tests (18 test files)
-        tutorials/                   # 7 step-by-step tutorials
+        tutorials/                   # 12 step-by-step tutorials
         examples/
     notebooks/                       # 5 Jupyter notebooks
     docs/
         benchmarks/                  # Generated performance plots
-    DEVELOPMENT_PLAN.md              # Full roadmap to v1.0 (with audit)
+    .github/workflows/tests.yml      # CI/CD pipeline
+    CHANGELOG.md                     # Release history
+    CONTRIBUTING.md                  # Contributor guidelines
+    CODE_OF_CONDUCT.md               # Community standards
+    DEVELOPMENT_PLAN.md              # Full roadmap and audit
     README.md
 ```
 
@@ -352,6 +358,11 @@ Step-by-step Python tutorials (runnable scripts):
 | 05 | [Performance](nova-py/tutorials/05_performance.py) | NOVA vs FITS performance benchmarks |
 | 06 | [Math Tools](nova-py/tutorials/06_math_tools.py) | Integrated analysis tools |
 | 07 | [Migration and Streaming](nova-py/tutorials/07_migration_streaming.py) | Batch migration and time-series ingest |
+| 08 | [Pipeline Framework](nova-py/tutorials/08_pipeline_framework.py) | Declarative pipelines with step logging |
+| 09 | [Native Operations](nova-py/tutorials/09_native_operations.py) | Tracked arithmetic and data transforms |
+| 10 | [Astrometry](nova-py/tutorials/10_astrometry.py) | Centroid extraction and plate solving |
+| 11 | [Photometry Pipeline](nova-py/tutorials/11_photometry_pipeline.py) | Multi-aperture photometry and calibration |
+| 12 | [Spectroscopy Pipeline](nova-py/tutorials/12_spectroscopy_pipeline.py) | Optimal extraction and spectral analysis |
 
 ```bash
 cd nova-py
@@ -377,7 +388,7 @@ jupyter notebook notebooks/
 
 ## Specification
 
-See the full specification: [NOVA Format Specification v0.3 (Draft)](spec/nova-spec-v0.3.md)
+See the full specification: [NOVA Format Specification v1.0 (RC)](spec/nova-spec-v1.0.md)
 
 ## Implementation Status
 
@@ -420,7 +431,7 @@ See the full specification: [NOVA Format Specification v0.3 (Draft)](spec/nova-s
 
 ## Strategic Roadmap
 
-1. [done] Solid specification (v0.3 draft)
+1. [done] Solid specification (v1.0 RC -- 24 sections, 1808 lines)
 2. [done] Python reference implementation (nova-py -- all 7 design invariants)
 3. [done] Integrated math and visualization tools
 4. [done] Multi-extension FITS support, table data, all data types (v0.2)
@@ -428,10 +439,10 @@ See the full specification: [NOVA Format Specification v0.3 (Draft)](spec/nova-s
 6. [done] Advanced analysis: image processing, photometry, spectral, coords, catalog (v0.4)
 7. [done] Pipeline framework, native operations, astrometry/photometry/spectroscopy pipelines (v0.5)
 8. [done] Comprehensive test suite with real astronomical data (454 tests)
-9. [next] Documentation, CI/CD, spec update, community files (v0.5.1)
-10. [next] Performance optimization and large-scale support (v0.6)
-11. [next] IVOA endorsement and ecosystem (v0.8)
-12. [next] Formal standardization (v1.0)
+9. [done] Documentation, CI/CD, spec update, community files, 12 tutorials (v1.0)
+10. [next] Performance optimization and large-scale support (post-v1.0)
+11. [next] IVOA endorsement and ecosystem
+12. [next] Formal standardization
 
 Full Development Plan: [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)
 
